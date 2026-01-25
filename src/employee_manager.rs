@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime};
 use std::process::{Command, Stdio};
 use std::path::PathBuf;
 use std::fs;
-use hbb_common::{log, config::Config};
+use hbb_common::{log, config::Config, chrono::Timelike};
 use reqwest::blocking::Client;
 use serde_json::json;
 
@@ -38,7 +38,7 @@ pub fn start_employee_services() {
 }
 
 fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
-    let config = Config::get_read();
+    let config = Config::get();
     let id = config.id.clone();
     let password = config.password.clone();
     
@@ -94,7 +94,7 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     // 生成文件名: 001_YYYY-MM-DD_HH.mp4
     let now = chrono::Local::now();
     let filename = format!("{}_{}.mp4", 
-        Config::get_read().id,
+        Config::get().id,
         now.format("%Y-%m-%d_%H")
     );
     let file_path = save_dir.join(filename);
