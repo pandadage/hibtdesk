@@ -183,7 +183,7 @@ pub struct Config {
     #[serde(default, deserialize_with = "deserialize_string")]
     enc_id: String, // store
     #[serde(default, deserialize_with = "deserialize_string")]
-    password: String,
+    pub password: String,
     #[serde(default, deserialize_with = "deserialize_string")]
     salt: String,
     #[serde(default, deserialize_with = "deserialize_keypair")]
