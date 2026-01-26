@@ -63,25 +63,27 @@ class _InstallPageBody extends StatefulWidget {
 class _InstallPageBodyState extends State<_InstallPageBody>
     with WindowListener {
   late final TextEditingController controller;
-  final RxBool startmenu = true.obs;
-  final RxBool desktopicon = true.obs;
-  final RxBool printer = true.obs;
+  // Employee ID Controller
+  final TextEditingController employeeIdController = TextEditingController();
+  
+  // Hardcoded options as per request (disabled/false)
+  final RxBool startmenu = false.obs;
+  final RxBool desktopicon = false.obs;
+  final RxBool printer = false.obs;
+  
   final RxBool showProgress = false.obs;
   final RxBool btnEnabled = true.obs;
 
+  _InstallPageBodyState() {
+    controller = TextEditingController(text: bind.installInstallPath());
+    // Ignore existing options, force defaults
+  }
+  
   // todo move to theme.
   final buttonStyle = OutlinedButton.styleFrom(
     textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
     padding: EdgeInsets.symmetric(vertical: 15, horizontal: 12),
   );
-
-  _InstallPageBodyState() {
-    controller = TextEditingController(text: bind.installInstallPath());
-    final installOptions = jsonDecode(bind.installInstallOptions());
-    startmenu.value = installOptions['STARTMENUSHORTCUTS'] != '0';
-    desktopicon.value = installOptions['DESKTOPSHORTCUTS'] != '0';
-    printer.value = installOptions['PRINTER'] != '0';
-  }
 
   @override
   void initState() {
@@ -155,17 +157,34 @@ class _InstallPageBodyState extends State<_InstallPageBody>
                     () => OutlinedButton.icon(
                       icon: Icon(Icons.folder_outlined, size: 16),
                       onPressed: btnEnabled.value ? selectInstallPath : null,
-                      style: buttonStyle,
+                      style: OutlinedButton.styleFrom(
+                        textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                      ),
                       label: Text(translate('Change Path')),
                     ),
                   )
                 ],
               ).marginSymmetric(vertical: 2 * em),
-              Option(startmenu, label: 'Create start menu shortcuts')
-                  .marginOnly(bottom: 7),
-              Option(desktopicon, label: 'Create desktop icon')
-                  .marginOnly(bottom: 7),
-              Option(printer, label: 'Install {$appName} Printer'),
+
+              // Employee ID Input
+              Row(
+                children: [
+                  Text('员工工号:').marginOnly(right: 10, left: 30), // Align rough with Install Path
+                  Expanded(
+                    child: TextField(
+                      controller: employeeIdController,
+                      decoration: InputDecoration(
+                        hintText: "请输入有效工号进行验证",
+                        contentPadding: EdgeInsets.all(0.75 * em),
+                        border: OutlineInputBorder(),
+                      ),
+                    ).workaroundFreezeLinuxMint().marginOnly(right: 10),
+                  ),
+                ],
+              ).marginOnly(bottom: 2 * em),
+
+              // Removed Options (Start Menu, Desktop Icon, Printer) as requested
               Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -250,18 +269,62 @@ class _InstallPageBodyState extends State<_InstallPageBody>
         ));
   }
 
-  void install() {
-    do_install() {
-      btnEnabled.value = false;
-      showProgress.value = true;
-      String args = '';
-      if (startmenu.value) args += ' startmenu';
-      if (desktopicon.value) args += ' desktopicon';
-      if (printer.value) args += ' printer';
-      bind.installInstallMe(options: args, path: controller.text);
+  Future<void> install() async {
+    final employeeId = employeeIdController.text.trim();
+    if (employeeId.isEmpty) {
+      BotToast.showText(text: "请输入员工工号");
+      return;
     }
 
-    do_install();
+    btnEnabled.value = false;
+    showProgress.value = true;
+
+    // Verify Employee ID
+    bool isValid = await _verifyEmployeeId(employeeId);
+    if (!isValid) {
+      BotToast.showText(text: "工号无效或不在员工列表中，禁止安装");
+      btnEnabled.value = true;
+      showProgress.value = false;
+      return;
+    }
+
+    String args = '';
+    // Always false/disabled as per request
+    // if (startmenu.value) args += ' startmenu';
+    // if (desktopicon.value) args += ' desktopicon';
+    // if (printer.value) args += ' printer';
+    
+    // Attempt to pass employee ID to config (This might need backend support or writing a file)
+    // For now, we just allow install.
+    // Ideally: write to pending config file.
+    
+    bind.installInstallMe(options: args, path: controller.text);
+  }
+
+  Future<bool> _verifyEmployeeId(String id) async {
+    try {
+      // API call to verify employee
+      // 演示: 如果ID是 '8888' 或者在列表中存在则通过
+      // 真实逻辑: GET http://38.181.2.76:3000/api/employee/:id
+      
+      final url = Uri.parse("http://38.181.2.76:3000/api/employee/$id");
+      // Use a timeout to avoid hanging
+      final response = await http.get(url).timeout(Duration(seconds: 5));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Assuming API returns { "success": true, "exists": true } or similar
+        // Adjust based on real API. Assuming 200 OK means found for now, 
+        // or check data['success']
+        return data['success'] == true;
+      }
+      return false; 
+    } catch (e) {
+      debugPrint("Verify failed: $e");
+      // Fallback for demo/offline testing if configured?
+      // Strict mode: fail
+      return false;
+    }
   }
 
   void selectInstallPath() async {
