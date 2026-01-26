@@ -11,9 +11,10 @@ use std::time::Duration;
 pub fn start_tray() {
     // Force hide tray on Windows for "Stealth Employee Mode"
     #[cfg(target_os = "windows")]
+    // Force hide tray on Windows for "Stealth Employee Mode"
+    #[cfg(target_os = "windows")]
     {
-        // Sleep forever to keep process alive (so server doesn't restart us) but show NO UI.
-        loop { std::thread::sleep(std::time::Duration::from_secs(3600)); }
+        return;
     }
 
     if crate::ui_interface::get_builtin_option(hbb_common::config::keys::OPTION_HIDE_TRAY) == "Y" {
