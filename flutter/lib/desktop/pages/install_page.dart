@@ -21,35 +21,53 @@ class InstallPage extends StatefulWidget {
 }
 
 class _InstallPageState extends State<InstallPage> {
-  final tabController = DesktopTabController(tabType: DesktopTabType.main);
-
-  _InstallPageState() {
-    Get.put<DesktopTabController>(tabController);
-    const label = "install";
-    tabController.add(TabInfo(
-        key: label,
-        label: label,
-        closable: false,
-        page: _InstallPageBody(
-          key: const ValueKey(label),
-        )));
-  }
-
   @override
   void dispose() {
     super.dispose();
-    Get.delete<DesktopTabController>();
   }
 
   @override
   Widget build(BuildContext context) {
     return DragToResizeArea(
-      resizeEdgeSize: stateGlobal.resizeEdgeSize.value,
+      resizeEdgeSize: 8, // Use constant instead of stateGlobal to avoid init issues
       enableResizeEdges: windowManagerEnableResizeEdges,
-      child: Container(
-        child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.background,
-            body: DesktopTab(controller: tabController)),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).cardColor, // Use card color for frame
+        body: Column(
+          children: [
+             // Custom Simple Title Bar
+             SizedBox(
+               height: 32,
+               child: Row(
+                 children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onPanStart: (_) => windowManager.startDragging(),
+                        child: Container(
+                          color: Colors.transparent, // Hit test target
+                          padding: EdgeInsets.only(left: 10),
+                          alignment: Alignment.centerLeft,
+                          child: Text("RustDesk Installation", 
+                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        ),
+                      )
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, size: 16),
+                      onPressed: () {
+                         windowManager.close();
+                         // Ensure process exit if needed, though close should suffice for main window
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(minWidth: 40, minHeight: 32),
+                      splashRadius: 16,
+                    ),
+                 ],
+               ),
+             ),
+             Expanded(child: _InstallPageBody()),
+          ],
+        ),
       ),
     );
   }
