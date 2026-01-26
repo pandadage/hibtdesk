@@ -248,7 +248,6 @@ pub fn get_fingerprinting_info() -> FingerprintingInfo {
             FINGERPRINTING_INFO = Some(FingerprintingInfo::new());
             CACHED_FINGERPRINTS = Some(HashMap::new());
         });
-        #[allow(static_mut_refs)]
         FINGERPRINTING_INFO.clone().unwrap_or_default()
     }
 }
@@ -280,7 +279,6 @@ pub fn get_fingerprint(only: Option<Vec<String>>, except: Option<Vec<String>>) -
     let cache_key = parameters.join("");
 
     unsafe {
-        #[allow(static_mut_refs)]
         if let Some(cache) = &mut CACHED_FINGERPRINTS {
             if let Some(fingerprint) = cache.get(&cache_key) {
                 return fingerprint.clone();

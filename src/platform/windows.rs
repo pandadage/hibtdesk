@@ -3147,7 +3147,6 @@ pub fn try_kill_rustdesk_main_window_process() -> ResultType<()> {
     // Kill rustdesk.exe without extra arg, should only be called by --server
     // We can find the exact process which occupies the ipc, see more from https://github.com/winsiderss/systeminformer
     log::info!("try kill rustdesk main window process");
-    use hbb_common::sysinfo::System;
     let mut sys = System::new();
     sys.refresh_processes();
     let my_uid = sys
