@@ -106,15 +106,22 @@ Future<void> main(List<String> args) async {
       default:
         break;
     }
-  } else if (args.isNotEmpty && args.first == '--cm') {
+  // Debug check
+  bool isInst = false;
+  try { isInst = bind.mainIsInstalled(); } catch(e) { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Check install failed: $e\n', mode: FileMode.append); }
+  File('debug_startup.log').writeAsStringSync('${DateTime.now()}: isWindows: $isWindows, isInstalled: $isInst, args: $args\n', mode: FileMode.append);
+
+  if (args.isNotEmpty && args.first == '--cm') {
     debugPrint("--cm started");
     desktopType = DesktopType.cm;
     await windowManager.ensureInitialized();
     runConnectionManagerScreen();
-  } else if (args.contains('--install') || (isWindows && !bind.mainIsInstalled())) {
+  } else if (args.contains('--install') || (isWindows && !isInst)) {
     // Force install page if --install arg is present OR if not installed (on Windows)
+    File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Entering runInstallPage\n', mode: FileMode.append);
     runInstallPage();
   } else {
+    File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Entering runMainApp\n', mode: FileMode.append);
     desktopType = DesktopType.main;
     await windowManager.ensureInitialized();
     windowManager.setPreventClose(true);
