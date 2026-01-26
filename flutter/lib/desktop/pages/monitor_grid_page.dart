@@ -60,8 +60,7 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
           final data = json.decode(response.body);
           if (data['success']) {
             final emp = data['employee'];
-            Provider.of<ServerModel>(context, listen: false)
-                .connect(emp['device_id'], password: emp['device_password']);
+            connect(context, emp['device_id'], password: emp['device_password']);
           }
         }
       } catch (e) {

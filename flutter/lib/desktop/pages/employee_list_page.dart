@@ -95,7 +95,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           String password = emp['device_password'];
           
           // 调用 RustDesk 连接
-          Provider.of<ServerModel>(context, listen: false).connect(deviceId, password: password);
+          connect(context, deviceId, password: password);
         }
       }
     } catch (e) {
