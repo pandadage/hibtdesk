@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:window_manager/window_manager.dart';
 // import 'package:flutter/services.dart';
 
+import 'package:flutter_hbb/desktop/pages/login_page.dart';
 import '../../common/shared_state.dart';
 
 class DesktopTabPage extends StatefulWidget {
@@ -39,6 +40,8 @@ class DesktopTabPage extends StatefulWidget {
 
 class _DesktopTabPageState extends State<DesktopTabPage> {
   final tabController = DesktopTabController(tabType: DesktopTabType.main);
+  // Default to false to show Login Page first
+  bool _isLoggedIn = false;
 
   _DesktopTabPageState() {
     RemoteCountState.init();
@@ -116,6 +119,14 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isLoggedIn) {
+      return LoginPage(onLoginSuccess: () {
+        setState(() {
+          _isLoggedIn = true;
+        });
+      });
+    }
+
     final tabWidget = Container(
         child: Scaffold(
             backgroundColor: Theme.of(context).colorScheme.background,
