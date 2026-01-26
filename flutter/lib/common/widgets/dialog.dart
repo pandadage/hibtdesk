@@ -2865,3 +2865,49 @@ Widget trustedDevicesTable(
         )),
   );
 }
+
+void setPasswordDialog({Function? notEmptyCallback}) async {
+  final controller = TextEditingController();
+  final showPassword = false.obs;
+  final result = await gFFI.dialogManager.show<bool>((setState, close) {
+    return CustomAlertDialog(
+      title: translate("Set permanent password"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Obx(() => TextField(
+                controller: controller,
+                obscureText: !showPassword.value,
+                decoration: InputDecoration(
+                  labelText: translate("Password"),
+                  suffixIcon: IconButton(
+                    icon: Icon(showPassword.value
+                        ? Icons.visibility
+                        : Icons.visibility_off),
+                    onPressed: () => showPassword.value = !showPassword.value,
+                  ),
+                ),
+              )),
+          SizedBox(height: 10),
+          Text(translate(
+              "The permanent password is used for unattended access.")),
+        ],
+      ),
+      actions: [
+        dialogButton("Cancel", onPressed: () => close(false), isOutline: true),
+        dialogButton("OK", onPressed: () async {
+          if (controller.text.isEmpty) {
+            Config.showToast(translate("Password cannot be empty"));
+            return;
+          }
+          await bind.mainSetPermanentPassword(password: controller.text);
+          close(true);
+        }),
+      ],
+    );
+  });
+  
+  if (result == true && notEmptyCallback != null) {
+    notEmptyCallback();
+  }
+}
