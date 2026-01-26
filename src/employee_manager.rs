@@ -108,7 +108,9 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
         let remaining_seconds = 3600 - (minutes * 60 + seconds);
         
         // 使用绝对路径调用 ffmpeg
+        use std::os::windows::process::CommandExt;
         let status = Command::new(ffmpeg_path)
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .args(&[
                 "-f", "gdigrab",
                 "-framerate", "5",

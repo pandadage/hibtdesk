@@ -10,6 +10,8 @@ import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:bot_toast/bot_toast.dart';
+import 'package:http/http.dart' as http;
 
 class InstallPage extends StatefulWidget {
   const InstallPage({Key? key}) : super(key: key);

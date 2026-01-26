@@ -46,35 +46,14 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
   _DesktopTabPageState() {
     RemoteCountState.init();
     Get.put<DesktopTabController>(tabController);
-    // Default: Employee List
-    tabController.add(TabInfo(
-        key: kTabLabelEmployeeList,
-        label: "员工列表",
-        selectedIcon: Icons.people_alt,
-        unselectedIcon: Icons.people_alt_outlined,
-        closable: false,
-        page: EmployeeListPage(
-          key: const ValueKey(kTabLabelEmployeeList),
-        )));
     
-    // Additional: Monitor Wall
-    tabController.add(TabInfo(
-        key: kTabLabelMonitorWall,
-        label: "监控墙",
-        selectedIcon: Icons.dashboard,
-        unselectedIcon: Icons.dashboard_outlined,
-        closable: false,
-        page: MonitorGridPage(
-          key: const ValueKey(kTabLabelMonitorWall),
-        )));
-
-    // Optional: Remote Desktop (Native ID/Pass) - keep as secondary or removing? 
-    // User wants "Employee" focus, so maybe keep it as "Local ID"
+    // Main Management Dashboard
+    // The DesktopHomePage references the new Sidebar layout we just created.
     tabController.add(TabInfo(
         key: kTabLabelHomePage,
-        label: "本机ID",
-        selectedIcon: Icons.desktop_windows,
-        unselectedIcon: Icons.desktop_windows_outlined,
+        label: "管理中心",
+        selectedIcon: Icons.admin_panel_settings,
+        unselectedIcon: Icons.admin_panel_settings_outlined,
         closable: false,
         page: DesktopHomePage(
           key: const ValueKey(kTabLabelHomePage),
