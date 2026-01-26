@@ -43,6 +43,11 @@ Future<void> main(List<String> args) async {
 
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
+  
+  // DEBUG LOGGING
+  try {
+    File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Main started\n', mode: FileMode.append);
+  } catch (e) {}
 
   if (!isDesktop) {
     runMobileApp();
@@ -397,16 +402,21 @@ void _runApp(
 }
 
 void runInstallPage() async {
+  try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: runInstallPage start\n', mode: FileMode.append); } catch (e) {}
   await windowManager.ensureInitialized();
+  try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: WM initialized\n', mode: FileMode.append); } catch (e) {}
   await initEnv(kAppTypeMain);
+  try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: InitEnv done\n', mode: FileMode.append); } catch (e) {}
   _runApp('', const InstallPage(), MyTheme.currentThemeMode());
   WindowOptions windowOptions =
       getHiddenTitleBarWindowOptions(size: Size(800, 600), center: true);
   windowManager.waitUntilReadyToShow(windowOptions, () async {
+    try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: ReadyToShow callback\n', mode: FileMode.append); } catch (e) {}
     windowManager.show();
     windowManager.focus();
     windowManager.setOpacity(1);
     windowManager.setAlignment(Alignment.center); // ensure
+    try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Window shown\n', mode: FileMode.append); } catch (e) {}
   });
 }
 
