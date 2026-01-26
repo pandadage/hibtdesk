@@ -106,7 +106,7 @@ Future<void> main(List<String> args) async {
     desktopType = DesktopType.cm;
     await windowManager.ensureInitialized();
     runConnectionManagerScreen();
-  } else if (true || args.contains('--install') || (isWindows && !bind.mainIsInstalled())) {
+  } else if (args.contains('--install') || (isWindows && !bind.mainIsInstalled())) {
     // Force install page if --install arg is present OR if not installed (on Windows)
     runInstallPage();
   } else {
@@ -175,6 +175,13 @@ void runMainApp(bool startService) async {
     windowManager.setTitle(getWindowName());
     // Do not use `windowManager.setResizable()` here.
     setResizable(!bind.isIncomingOnly());
+
+    // User Prompt: Hint if already installed
+    if (isWindows && bind.mainIsInstalled()) {
+       Future.delayed(Duration(seconds: 1), () {
+         BotToast.showText(text: "System: Application is installed and running");
+       });
+    }
   });
 }
 
