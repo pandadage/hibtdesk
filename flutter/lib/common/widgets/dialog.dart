@@ -2869,9 +2869,11 @@ Widget trustedDevicesTable(
 void setPasswordDialog({Function? notEmptyCallback}) async {
   final controller = TextEditingController();
   final showPassword = false.obs;
-  final result = await gFFI.dialogManager.show<bool>((setState, close) {
+  // Fix: lambda expects (setState, close, context)
+  final result = await gFFI.dialogManager.show<bool>((setState, close, context) {
     return CustomAlertDialog(
-      title: translate("Set permanent password"),
+      // Fix: title expects a Widget
+      title: Text(translate("Set permanent password")),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2897,7 +2899,8 @@ void setPasswordDialog({Function? notEmptyCallback}) async {
         dialogButton("Cancel", onPressed: () => close(false), isOutline: true),
         dialogButton("OK", onPressed: () async {
           if (controller.text.isEmpty) {
-            Config.showToast(translate("Password cannot be empty"));
+            // Fix: Config is undefined, use BotToast directly
+            BotToast.showText(text: translate("Password cannot be empty"));
             return;
           }
           await bind.mainSetPermanentPassword(password: controller.text);
