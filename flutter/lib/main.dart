@@ -106,7 +106,8 @@ Future<void> main(List<String> args) async {
     desktopType = DesktopType.cm;
     await windowManager.ensureInitialized();
     runConnectionManagerScreen();
-  } else if (args.contains('--install')) {
+  } else if (args.contains('--install') || (isWindows && !bind.mainIsInstalledSync())) {
+    // Force install page if --install arg is present OR if not installed (on Windows)
     runInstallPage();
   } else {
     desktopType = DesktopType.main;
