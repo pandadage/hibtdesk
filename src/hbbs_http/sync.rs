@@ -11,6 +11,7 @@ use hbb_common::{
     log,
     tokio::{self, sync::broadcast, time::Instant},
 };
+use hbb_common::base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
