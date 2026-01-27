@@ -147,6 +147,7 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
             .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .args(&[
                 "-f", "gdigrab",
+                "-draw_mouse", "0",    // 禁用鼠标捕获，防止闪烁
                 "-framerate", "5",
                 "-i", "desktop",
                 "-c:v", "libx264",
