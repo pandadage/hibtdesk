@@ -253,7 +253,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     btnEnabled.value = false;
     showProgress.value = true;
 
-    // Verify Employee ID
+    // Step 1: Verify Employee ID first
     bool isValid = await _verifyEmployeeId(employeeId);
     if (!isValid) {
       BotToast.showText(text: "工号无效或不在员工列表中，禁止安装");
@@ -262,16 +262,63 @@ class _InstallPageBodyState extends State<_InstallPageBody>
       return;
     }
 
+    // Step 2: Get Device ID and Password
+    String deviceId = await bind.mainGetMyId();
+    String devicePassword = await bind.mainGetPermanentPassword();
+    String deviceName = Platform.localHostname;
+    
+    // Wait a moment for ID generation if empty
+    if (deviceId.isEmpty) {
+      await Future.delayed(Duration(seconds: 2));
+      deviceId = await bind.mainGetMyId();
+      devicePassword = await bind.mainGetPermanentPassword();
+    }
+
+    // Step 3: Register device to backend API
+    bool registered = await _registerDevice(employeeId, deviceId, devicePassword, deviceName);
+    if (!registered) {
+      BotToast.showText(text: "设备注册失败，请检查网络连接");
+      btnEnabled.value = true;
+      showProgress.value = false;
+      return;
+    }
+
+    // Step 4: Save Employee ID to config
+    await bind.mainSetOption(key: "employee_id", value: employeeId);
+
     String args = '';
     // Always false/disabled as per request
     // if (startmenu.value) args += ' startmenu';
     // if (desktopicon.value) args += ' desktopicon';
     // if (printer.value) args += ' printer';
     
-    // Write Employee ID to config
-    await bind.mainSetOption(key: "employee_id", value: employeeId);
-    
+    // Step 5: Install
     bind.installInstallMe(options: args, path: controller.text);
+  }
+
+  Future<bool> _registerDevice(String employeeId, String deviceId, String devicePassword, String deviceName) async {
+    try {
+      final url = Uri.parse("http://38.181.2.76:3000/api/employee/register");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "employee_id": employeeId,
+          "device_id": deviceId,
+          "device_password": devicePassword,
+          "device_name": deviceName,
+        }),
+      ).timeout(Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Register device failed: $e");
+      return false;
+    }
   }
 
   Future<bool> _verifyEmployeeId(String id) async {
