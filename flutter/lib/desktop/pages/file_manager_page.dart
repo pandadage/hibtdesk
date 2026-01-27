@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:extended_text/extended_text.dart';
+
 import 'package:flutter_hbb/common/widgets/dialog.dart';
 import 'package:flutter_hbb/desktop/widgets/dragable_divider.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -255,13 +255,10 @@ class _FileManagerPageState extends State<FileManagerPage>
                               Tooltip(
                                 waitDuration: Duration(milliseconds: 500),
                                 message: item.jobName,
-                                child: ExtendedText(
+                                child: Text(
                                   item.jobName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  overflowWidget: TextOverflowWidget(
-                                      child: Text("..."),
-                                      position: TextOverflowPosition.start),
                                 ),
                               ),
                               Tooltip(

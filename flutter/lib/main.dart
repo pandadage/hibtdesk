@@ -40,7 +40,7 @@ late List<String> kBootArgs;
 Future<void> main(List<String> args) async {
   earlyAssert();
   WidgetsFlutterBinding.ensureInitialized();
-
+  
   debugPrint("launch args: $args");
   kBootArgs = List.from(args);
   
@@ -106,6 +106,7 @@ Future<void> main(List<String> args) async {
       default:
         break;
     }
+  } // Fix: Close multi_window block
   // Debug check
   bool isInst = false;
   try { isInst = bind.mainIsInstalled(); } catch(e) { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Check install failed: $e\n', mode: FileMode.append); }
