@@ -1236,6 +1236,27 @@ fn get_default_install_path() -> String {
     format!("{}\\{}", sys_drive, crate::get_app_name())
 }
 
+// Get the actual installed exe path (handles case sensitivity)
+fn get_installed_exe_path() -> String {
+    let path = get_default_install_path();
+    let app_name = crate::get_app_name();
+    
+    // Try exact case first
+    let exe = format!("{}\\{}.exe", path, app_name);
+    if std::fs::metadata(&exe).is_ok() {
+        return exe;
+    }
+    
+    // Try lowercase
+    let exe_lower = format!("{}\\{}.exe", path, app_name.to_lowercase());
+    if std::fs::metadata(&exe_lower).is_ok() {
+        return exe_lower;
+    }
+    
+    // Default to exact case (even if doesn't exist)
+    exe
+}
+
 pub fn check_update_broker_process() -> ResultType<()> {
     let process_exe = win_topmost_window::INJECTED_PROCESS_EXE;
     let origin_process_exe = win_topmost_window::ORIGIN_PROCESS_EXE;
@@ -2978,7 +2999,8 @@ sc start {app_name}
 }
 
 fn run_after_run_cmds(silent: bool) {
-    let (_, _, _, exe) = get_install_info();
+    // Use get_installed_exe_path for correct case-sensitive path
+    let exe = get_installed_exe_path();
     if !silent {
         log::debug!("Spawn new window");
         allow_err!(std::process::Command::new("cmd")
