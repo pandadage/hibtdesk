@@ -83,6 +83,12 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(target_os = "windows")]
 fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
+    // 检查是否有 employee_id，如果没有意味着未安装/未配置，不应启动录像
+    let employee_id = Config::get().options.get("employee_id").cloned().unwrap_or_default();
+    if employee_id.is_empty() {
+        return Ok(());
+    }
+
     // 录像保存路径 C:\EmployeeRecords
     let save_dir = PathBuf::from("C:\\EmployeeRecords");
     if !save_dir.exists() {
