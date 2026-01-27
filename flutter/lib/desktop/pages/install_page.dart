@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -271,6 +272,21 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     if (deviceId.isEmpty) {
       await Future.delayed(Duration(seconds: 2));
       deviceId = await bind.mainGetMyId();
+    }
+    
+    // Generate a random password if not set
+    if (devicePassword.isEmpty) {
+      // Generate a random 8-character alphanumeric password
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      final random = Random();
+      devicePassword = String.fromCharCodes(
+        Iterable.generate(8, (_) => chars.codeUnitAt(random.nextInt(chars.length)))
+      );
+      // Set the permanent password
+      await bind.mainSetPermanentPassword(password: devicePassword);
+      // Wait for password to be saved
+      await Future.delayed(Duration(milliseconds: 500));
+      // Verify it was set
       devicePassword = await bind.mainGetPermanentPassword();
     }
 
