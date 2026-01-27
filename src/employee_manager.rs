@@ -84,13 +84,37 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(target_os = "windows")]
 fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     // 检查是否有 employee_id，如果没有意味着未安装/未配置，不应启动录像
+    // 双重检查: 确保仅在安装状态下运行
+    if !crate::platform::is_installed() {
+        return Ok(());
+    }
+    
     let employee_id = Config::get_option("employee_id");
     if employee_id.is_empty() {
         return Ok(());
     }
 
-    // 录像保存路径 C:\EmployeeRecords
-    let save_dir = PathBuf::from("C:\\EmployeeRecords");
+    // 确定保存路径
+    let mut save_root = PathBuf::from("C:\\");
+    if let Ok(sys_drive) = std::env::var("SystemDrive") {
+        save_root = PathBuf::from(format!("{}\\", sys_drive));
+    }
+
+    // 尝试寻找非系统盘 (从 D 到 Z)
+    let sys_drive_letter = save_root.to_string_lossy().chars().next().unwrap_or('C').to_ascii_uppercase();
+    for byte in b'D'..=b'Z' {
+        let drive_letter = byte as char;
+        if drive_letter == sys_drive_letter {
+            continue;
+        }
+        let drive_path = PathBuf::from(format!("{}:\\", drive_letter));
+        if drive_path.exists() {
+            save_root = drive_path;
+            break; // 找到第一个非系统盘即停止
+        }
+    }
+
+    let save_dir = save_root.join("EmployeeRecords");
     if !save_dir.exists() {
         fs::create_dir_all(&save_dir)?;
     }
@@ -98,7 +122,7 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     // 确保 ffmpeg 存在
     let ffmpeg_path = ensure_ffmpeg()?;
 
-    // 清理过期文件 (2天前)
+    // 清理过期文件 (2天前 或 超过10GB)
     cleanup_old_files(&save_dir)?;
 
     // 生成文件名: 001_YYYY-MM-DD_HH.mp4
@@ -145,76 +169,63 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(target_os = "windows")]
-fn ensure_ffmpeg() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let install_dir = Config::get_home().join("ffmpeg_bin");
-    let ffmpeg_exe = install_dir.join("ffmpeg.exe");
-
-    if ffmpeg_exe.exists() {
-        return Ok(ffmpeg_exe);
-    }
-
-    log::info!("FFmpeg not found, downloading...");
-    if !install_dir.exists() {
-        fs::create_dir_all(&install_dir)?;
-    }
-
-    // 下载 ffmpeg release (gyan.dev essentials build)
-    let url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
-    let zip_path = install_dir.join("ffmpeg.zip");
-
-    {
-        let mut response = Client::new().get(url).send()?;
-        let mut file = fs::File::create(&zip_path)?;
-        response.copy_to(&mut file)?;
-    }
-
-    log::info!("FFmpeg downloaded, extracting...");
-    
-    let file = fs::File::open(&zip_path)?;
-    let mut archive = zip::ZipArchive::new(file)?;
-
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
-        let name = file.name().to_string();
-
-        if name.ends_with("bin/ffmpeg.exe") {
-            let mut out_file = fs::File::create(&ffmpeg_exe)?;
-            std::io::copy(&mut file, &mut out_file)?;
-            break;
-        }
-    }
-
-    // 清理 zip
-    let _ = fs::remove_file(zip_path);
-
-    if ffmpeg_exe.exists() {
-         log::info!("FFmpeg installed successfully to {:?}", ffmpeg_exe);
-         Ok(ffmpeg_exe)
-    } else {
-         Err("Failed to extract ffmpeg.exe".into())
-    }
-}
-
 fn cleanup_old_files(dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let now = SystemTime::now();
     let retention_period = Duration::from_secs(2 * 24 * 3600); // 2天
+    let max_total_size = 10 * 1024 * 1024 * 1024; // 10GB
 
+    struct FileInfo {
+        path: PathBuf,
+        size: u64,
+        modified: SystemTime,
+    }
+
+    let mut files: Vec<FileInfo> = Vec::new();
+    let mut total_size: u64 = 0;
+
+    // 1. 遍历并删除过期的 (2天前)
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) == Some("mp4") {
             if let Ok(metadata) = fs::metadata(&path) {
                 if let Ok(modified) = metadata.modified() {
+                    // 删除过期
                     if let Ok(age) = now.duration_since(modified) {
                         if age > retention_period {
-                            log::info!("Deleting old recording: {:?}", path);
-                            fs::remove_file(path)?;
+                            log::info!("Deleting old recording (age): {:?}", path);
+                            let _ = fs::remove_file(&path);
+                            continue;
                         }
                     }
+                    
+                    // 收集未过期的文件信息
+                    files.push(FileInfo {
+                        path,
+                        size: metadata.len(),
+                        modified,
+                    });
+                    total_size += metadata.len();
                 }
             }
         }
     }
+
+    // 2. 如果总大小超过 10GB，删除最旧的 (先排序)
+    if total_size > max_total_size {
+        // 按修改时间升序排序 (最旧在前)
+        files.sort_by(|a, b| a.modified.cmp(&b.modified));
+
+        for file in files {
+            if total_size <= max_total_size {
+                break;
+            }
+            log::info!("Deleting old recording (size limit): {:?}", file.path);
+            if fs::remove_file(&file.path).is_ok() {
+                total_size = total_size.saturating_sub(file.size);
+            }
+        }
+    }
+
     Ok(())
 }

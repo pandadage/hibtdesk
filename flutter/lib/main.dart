@@ -45,9 +45,8 @@ Future<void> main(List<String> args) async {
   kBootArgs = List.from(args);
   
   // DEBUG LOGGING
-  try {
-    File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Main started\n', mode: FileMode.append);
-  } catch (e) {}
+  // Removed to avoid permission issues in Program Files
+
 
   if (!isDesktop) {
     runMobileApp();
@@ -109,8 +108,8 @@ Future<void> main(List<String> args) async {
   } // Fix: Close multi_window block
   // Debug check
   bool isInst = false;
-  try { isInst = bind.mainIsInstalled(); } catch(e) { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Check install failed: $e\n', mode: FileMode.append); }
-  File('debug_startup.log').writeAsStringSync('${DateTime.now()}: isWindows: $isWindows, isInstalled: $isInst, args: $args\n', mode: FileMode.append);
+  try { isInst = bind.mainIsInstalled(); } catch(e) {}
+  // File('debug_startup.log').writeAsStringSync('${DateTime.now()}: isWindows: $isWindows, isInstalled: $isInst, args: $args\n', mode: FileMode.append);
 
   if (args.isNotEmpty && args.first == '--cm') {
     debugPrint("--cm started");
@@ -119,10 +118,10 @@ Future<void> main(List<String> args) async {
     runConnectionManagerScreen();
   } else if (args.contains('--install') || (isWindows && !isInst)) {
     // Force install page if --install arg is present OR if not installed (on Windows)
-    File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Entering runInstallPage\n', mode: FileMode.append);
+    // File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Entering runInstallPage\n', mode: FileMode.append);
     runInstallPage();
   } else {
-    File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Entering runMainApp\n', mode: FileMode.append);
+    // File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Entering runMainApp\n', mode: FileMode.append);
     desktopType = DesktopType.main;
     await windowManager.ensureInitialized();
     windowManager.setPreventClose(true);
@@ -410,21 +409,21 @@ void _runApp(
 }
 
 void runInstallPage() async {
-  try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: runInstallPage start\n', mode: FileMode.append); } catch (e) {}
+  // try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: runInstallPage start\n', mode: FileMode.append); } catch (e) {}
   await windowManager.ensureInitialized();
-  try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: WM initialized\n', mode: FileMode.append); } catch (e) {}
+  // try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: WM initialized\n', mode: FileMode.append); } catch (e) {}
   await initEnv(kAppTypeMain);
-  try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: InitEnv done\n', mode: FileMode.append); } catch (e) {}
+  // try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: InitEnv done\n', mode: FileMode.append); } catch (e) {}
   _runApp('', const InstallPage(), MyTheme.currentThemeMode());
   WindowOptions windowOptions =
       getHiddenTitleBarWindowOptions(size: Size(800, 600), center: true);
   windowManager.waitUntilReadyToShow(windowOptions, () async {
-    try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: ReadyToShow callback\n', mode: FileMode.append); } catch (e) {}
+    // try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: ReadyToShow callback\n', mode: FileMode.append); } catch (e) {}
     windowManager.show();
     windowManager.focus();
     windowManager.setOpacity(1);
     windowManager.setAlignment(Alignment.center); // ensure
-    try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Window shown\n', mode: FileMode.append); } catch (e) {}
+    // try { File('debug_startup.log').writeAsStringSync('${DateTime.now()}: Window shown\n', mode: FileMode.append); } catch (e) {}
   });
 }
 

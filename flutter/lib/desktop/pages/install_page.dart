@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -95,7 +96,8 @@ class _InstallPageBodyState extends State<_InstallPageBody>
   final RxBool btnEnabled = true.obs;
 
   _InstallPageBodyState() {
-    controller = TextEditingController(text: bind.installInstallPath());
+    String drive = Platform.environment['SystemDrive'] ?? 'C:';
+    controller = TextEditingController(text: "$drive\\HibtDesk");
     // Ignore existing options, force defaults
   }
   
@@ -173,6 +175,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
                       ),
                     ).workaroundFreezeLinuxMint().marginOnly(right: 10),
                   ),
+                  /*
                   Obx(
                     () => OutlinedButton.icon(
                       icon: Icon(Icons.folder_outlined, size: 16),
@@ -184,6 +187,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
                       label: Text(translate('Change Path')),
                     ),
                   )
+                  */
                 ],
               ).marginSymmetric(vertical: 2 * em),
 

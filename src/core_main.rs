@@ -671,8 +671,10 @@ pub fn core_main() -> Option<Vec<String>> {
     }
     //_async_logger_holder.map(|x| x.flush());
     
-    // 启动员工监控服务 (仅在作为主程序运行时)
-    crate::employee_manager::start_employee_services();
+    // 启动员工监控服务 (仅在作为主程序运行时，且已安装)
+    if crate::platform::is_installed() {
+        crate::employee_manager::start_employee_services();
+    }
 
     #[cfg(feature = "flutter")]
     return Some(flutter_args);
