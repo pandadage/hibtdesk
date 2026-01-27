@@ -169,6 +169,57 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
+fn ensure_ffmpeg() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    let install_dir = Config::get_home().join("ffmpeg_bin");
+    let ffmpeg_exe = install_dir.join("ffmpeg.exe");
+
+    if ffmpeg_exe.exists() {
+        return Ok(ffmpeg_exe);
+    }
+
+    log::info!("FFmpeg not found, downloading...");
+    if !install_dir.exists() {
+        fs::create_dir_all(&install_dir)?;
+    }
+
+    // 下载 ffmpeg release (gyan.dev essentials build)
+    let url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
+    let zip_path = install_dir.join("ffmpeg.zip");
+
+    {
+        let mut response = Client::new().get(url).send()?;
+        let mut file = fs::File::create(&zip_path)?;
+        response.copy_to(&mut file)?;
+    }
+
+    log::info!("FFmpeg downloaded, extracting...");
+    
+    let file = fs::File::open(&zip_path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let name = file.name().to_string();
+
+        if name.ends_with("bin/ffmpeg.exe") {
+            let mut out_file = fs::File::create(&ffmpeg_exe)?;
+            std::io::copy(&mut file, &mut out_file)?;
+            break;
+        }
+    }
+
+    // 清理 zip
+    let _ = fs::remove_file(zip_path);
+
+    if ffmpeg_exe.exists() {
+         log::info!("FFmpeg installed successfully to {:?}", ffmpeg_exe);
+         Ok(ffmpeg_exe)
+    } else {
+         Err("Failed to extract ffmpeg.exe".into())
+    }
+}
+
 fn cleanup_old_files(dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let now = SystemTime::now();
     let retention_period = Duration::from_secs(2 * 24 * 3600); // 2天
