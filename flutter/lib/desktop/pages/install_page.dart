@@ -162,34 +162,22 @@ class _InstallPageBodyState extends State<_InstallPageBody>
             children: [
               Text(translate('Installation'),
                   style: Theme.of(context).textTheme.headlineMedium),
-              Row(
-                children: [
-                  Text('${translate('Installation Path')}:')
-                      .marginOnly(right: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.all(0.75 * em),
-                      ),
-                    ).workaroundFreezeLinuxMint().marginOnly(right: 10),
-                  ),
-                  /*
-                  Obx(
-                    () => OutlinedButton.icon(
-                      icon: Icon(Icons.folder_outlined, size: 16),
-                      onPressed: btnEnabled.value ? selectInstallPath : null,
-                      style: OutlinedButton.styleFrom(
-                        textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-                        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 12),
-                      ),
-                      label: Text(translate('Change Path')),
-                    ),
-                  )
-                  */
-                ],
-              ).marginSymmetric(vertical: 2 * em),
+              // Installation Path Hidden as requested
+              // Row(
+              //   children: [
+              //     Text('${translate('Installation Path')}:').marginOnly(right: 10),
+              //     Expanded(
+              //       child: TextField(
+              //         controller: controller,
+              //         readOnly: true,
+              //         decoration: InputDecoration(
+              //           contentPadding: EdgeInsets.all(0.75 * em),
+              //         ),
+              //       ).workaroundFreezeLinuxMint().marginOnly(right: 10),
+              //     ),
+              //   ],
+              // ).marginSymmetric(vertical: 2 * em),
+              SizedBox(height: 1 * em),
 
               // Employee ID Input
               Row(

@@ -1226,20 +1226,14 @@ fn get_default_install_info() -> (String, String, String, String) {
 }
 
 fn get_default_install_path() -> String {
-    let mut pf = "C:\\Program Files".to_owned();
-    if let Ok(x) = std::env::var("ProgramFiles") {
-        if std::path::Path::new(&x).exists() {
-            pf = x;
+    // Install to system drive root: C:\HibtDesk
+    let mut sys_drive = "C:".to_owned();
+    if let Ok(x) = std::env::var("SystemDrive") {
+        if !x.is_empty() {
+            sys_drive = x;
         }
     }
-    #[cfg(target_pointer_width = "32")]
-    {
-        let tmp = pf.replace("Program Files", "Program Files (x86)");
-        if std::path::Path::new(&tmp).exists() {
-            pf = tmp;
-        }
-    }
-    format!("{}\\{}", pf, crate::get_app_name())
+    format!("{}\\{}", sys_drive, crate::get_app_name())
 }
 
 pub fn check_update_broker_process() -> ResultType<()> {
