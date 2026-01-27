@@ -47,7 +47,7 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
     // 在这里我们先获取 device_id
     
     // 从配置中读取 employee_id
-    let employee_id = config.options.get("employee_id").cloned().unwrap_or_default();
+    let employee_id = Config::get_option("employee_id");
     
     if employee_id.is_empty() {
         log::warn!("Employee ID not configured, skipping heartbeat");
@@ -84,7 +84,7 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(target_os = "windows")]
 fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     // 检查是否有 employee_id，如果没有意味着未安装/未配置，不应启动录像
-    let employee_id = Config::get().options.get("employee_id").cloned().unwrap_or_default();
+    let employee_id = Config::get_option("employee_id");
     if employee_id.is_empty() {
         return Ok(());
     }

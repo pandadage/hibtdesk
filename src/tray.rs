@@ -9,13 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub fn start_tray() {
-    // Force hide tray on Windows for "Stealth Employee Mode"
-    #[cfg(target_os = "windows")]
-    // Force hide tray on Windows for "Stealth Employee Mode"
-    #[cfg(target_os = "windows")]
-    {
-        return;
-    }
+
 
     if crate::ui_interface::get_builtin_option(hbb_common::config::keys::OPTION_HIDE_TRAY) == "Y" {
         #[cfg(not(target_os = "macos"))]
