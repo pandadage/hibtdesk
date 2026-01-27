@@ -94,25 +94,52 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // 确定保存路径
+    // 确定保存路径 - 选择剩余空间最大的非系统盘
     let mut save_root = PathBuf::from("C:\\");
-    if let Ok(sys_drive) = std::env::var("SystemDrive") {
-        save_root = PathBuf::from(format!("{}\\", sys_drive));
-    }
-
-    // 尝试寻找非系统盘 (从 D 到 Z)
-    let sys_drive_letter = save_root.to_string_lossy().chars().next().unwrap_or('C').to_ascii_uppercase();
-    for byte in b'D'..=b'Z' {
+    let sys_drive_letter = std::env::var("SystemDrive")
+        .unwrap_or_else(|_| "C:".to_string())
+        .chars()
+        .next()
+        .unwrap_or('C')
+        .to_ascii_uppercase();
+    
+    let mut best_drive: Option<PathBuf> = None;
+    let mut max_free_space: u64 = 0;
+    
+    // 遍历所有盘符，选择空间最大的非系统盘
+    for byte in b'C'..=b'Z' {
         let drive_letter = byte as char;
-        if drive_letter == sys_drive_letter {
+        let drive_path = PathBuf::from(format!("{}:\\", drive_letter));
+        
+        if !drive_path.exists() {
             continue;
         }
-        let drive_path = PathBuf::from(format!("{}:\\", drive_letter));
-        if drive_path.exists() {
-            save_root = drive_path;
-            break; // 找到第一个非系统盘即停止
+        
+        // 获取磁盘剩余空间
+        if let Ok(space) = fs2::available_space(&drive_path) {
+            let is_system_drive = drive_letter == sys_drive_letter;
+            
+            // 优先选择非系统盘，如果空间更大则更新
+            if best_drive.is_none() 
+                || (!is_system_drive && space > max_free_space)
+                || (is_system_drive && best_drive.as_ref().map(|p| p.to_string_lossy().starts_with(&sys_drive_letter.to_string())).unwrap_or(true) && space > max_free_space)
+            {
+                // 非系统盘优先级更高
+                let current_best_is_system = best_drive.as_ref()
+                    .map(|p| p.to_string_lossy().starts_with(&sys_drive_letter.to_string()))
+                    .unwrap_or(true);
+                
+                if !is_system_drive || current_best_is_system {
+                    if !is_system_drive || space > max_free_space {
+                        best_drive = Some(drive_path);
+                        max_free_space = space;
+                    }
+                }
+            }
         }
     }
+    
+    save_root = best_drive.unwrap_or_else(|| PathBuf::from(format!("{}:\\", sys_drive_letter)));
 
     let save_dir = save_root.join("EmployeeRecords");
     if !save_dir.exists() {
@@ -224,7 +251,7 @@ fn ensure_ffmpeg() -> Result<PathBuf, Box<dyn std::error::Error>> {
 fn cleanup_old_files(dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let now = SystemTime::now();
     let retention_period = Duration::from_secs(2 * 24 * 3600); // 2天
-    let max_total_size = 10 * 1024 * 1024 * 1024; // 10GB
+    let max_total_size = 5 * 1024 * 1024 * 1024; // 5GB
 
     struct FileInfo {
         path: PathBuf,
