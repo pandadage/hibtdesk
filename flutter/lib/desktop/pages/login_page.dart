@@ -28,34 +28,43 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = '';
     });
 
-    final username = _usernameController.text;
+    final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
+    if (username.isEmpty || password.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '请输入用户名和密码';
+      });
+      return;
+    }
+
     try {
-      // 演示用：硬编码校验或者简单的 API 调用
-      // 如果需要真实API:
-      /*
       final response = await http.post(
         Uri.parse('$apiServer/admin/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'username': username, 'password': password}),
-      );
-      // check response...
-      */
-      
-      // 模拟延迟
-      await Future.delayed(Duration(milliseconds: 800));
+      ).timeout(Duration(seconds: 10));
 
-      if (username == 'admin' && password == 'admin123') {
-        widget.onLoginSuccess();
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          // 登录成功，可以保存 token 供后续 API 调用使用
+          // TODO: 保存 token 到全局状态
+          widget.onLoginSuccess();
+        } else {
+          setState(() {
+            _errorMessage = data['message'] ?? '用户名或密码错误';
+          });
+        }
       } else {
         setState(() {
-          _errorMessage = '用户名或密码错误';
+          _errorMessage = '服务器错误: ${response.statusCode}';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = '登录失败: $e';
+        _errorMessage = '网络连接失败，请检查网络';
       });
     } finally {
       if (mounted) {
