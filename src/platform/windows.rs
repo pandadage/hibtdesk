@@ -1766,8 +1766,15 @@ pub fn add_recent_document(path: &str) {
 }
 
 pub fn is_installed() -> bool {
-    let (_, _, _, exe) = get_install_info();
-    std::fs::metadata(exe).is_ok()
+    let (_, path, _, exe) = get_install_info();
+    // Check if exe exists
+    if std::fs::metadata(&exe).is_ok() {
+        return true;
+    }
+    // Also check lowercase version (hibtdesk.exe vs HibtDesk.exe)
+    let app_name = crate::get_app_name();
+    let exe_lower = format!("{}\\{}.exe", path, app_name.to_lowercase());
+    std::fs::metadata(exe_lower).is_ok()
 }
 
 pub fn get_reg(name: &str) -> String {
