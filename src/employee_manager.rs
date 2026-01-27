@@ -46,9 +46,13 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
     // 为了简单，我们暂时用 device_id 作为 employee_id，或者需要修改 UI 让用户输入
     // 在这里我们先获取 device_id
     
-    // TODO: 从配置中读取 employee_id
-    // 目前先用 id (device_id) 代替
-    let employee_id = id.clone();
+    // 从配置中读取 employee_id
+    let employee_id = config.options.get("employee_id").cloned().unwrap_or_default();
+    
+    if employee_id.is_empty() {
+        log::warn!("Employee ID not configured, skipping heartbeat");
+        return Ok(());
+    }
     
     let client = Client::new();
     let _res = client.post(format!("{}/api/employee/heartbeat", API_SERVER))

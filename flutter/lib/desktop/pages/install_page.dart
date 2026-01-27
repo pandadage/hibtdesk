@@ -47,7 +47,7 @@ class _InstallPageState extends State<InstallPage> {
                           color: Colors.transparent, // Hit test target
                           padding: EdgeInsets.only(left: 10),
                           alignment: Alignment.centerLeft,
-                          child: Text("RustDesk Installation", 
+                          child: Text("HibtDesk Installation", 
                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                         ),
                       )
@@ -205,45 +205,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
               ).marginOnly(bottom: 2 * em),
 
               // Removed Options (Start Menu, Desktop Icon, Printer) as requested
-              Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDarkTheme
-                        ? Color.fromARGB(135, 87, 87, 90)
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline_rounded, size: 32)
-                          .marginOnly(right: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(translate('agreement_tip'))
-                              .marginOnly(bottom: em),
-                          InkWell(
-                            hoverColor: Colors.transparent,
-                            onTap: () => launchUrlString(
-                                'https://rustdesk.com/privacy.html'),
-                            child: Tooltip(
-                              message: 'https://rustdesk.com/privacy.html',
-                              child: Row(children: [
-                                Icon(Icons.launch_outlined, size: 16)
-                                    .marginOnly(right: 5),
-                                Text(
-                                  translate('End-user license agreement'),
-                                  style: const TextStyle(
-                                      decoration: TextDecoration.underline),
-                                )
-                              ]),
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  )).marginSymmetric(vertical: 2 * em),
+
               Row(
                 children: [
                   Expanded(
@@ -314,9 +276,8 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     // if (desktopicon.value) args += ' desktopicon';
     // if (printer.value) args += ' printer';
     
-    // Attempt to pass employee ID to config (This might need backend support or writing a file)
-    // For now, we just allow install.
-    // Ideally: write to pending config file.
+    // Write Employee ID to config
+    await bind.mainSetOption(key: "employee_id", value: employeeId);
     
     bind.installInstallMe(options: args, path: controller.text);
   }
@@ -325,9 +286,9 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     try {
       // API call to verify employee
       // 演示: 如果ID是 '8888' 或者在列表中存在则通过
-      // 真实逻辑: GET http://38.181.2.76:3000/api/employee/:id
+      // 真实逻辑: GET http://38.181.2.76:3000/api/public/check-employee/$id
       
-      final url = Uri.parse("http://38.181.2.76:3000/api/employee/$id");
+      final url = Uri.parse("http://38.181.2.76:3000/api/public/check-employee/$id");
       // Use a timeout to avoid hanging
       final response = await http.get(url).timeout(Duration(seconds: 5));
       
