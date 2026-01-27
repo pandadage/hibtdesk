@@ -1766,15 +1766,34 @@ pub fn add_recent_document(path: &str) {
 }
 
 pub fn is_installed() -> bool {
-    let (_, path, _, exe) = get_install_info();
-    // Check if exe exists
+    // Get the default install path directly (don't rely on registry since we're in stealth mode)
+    let path = get_default_install_path();
+    let app_name = crate::get_app_name();
+    
+    // Check for exact case: C:\HibtDesk\HibtDesk.exe
+    let exe = format!("{}\\{}.exe", path, app_name);
     if std::fs::metadata(&exe).is_ok() {
         return true;
     }
-    // Also check lowercase version (hibtdesk.exe vs HibtDesk.exe)
-    let app_name = crate::get_app_name();
+    
+    // Check for lowercase: C:\HibtDesk\hibtdesk.exe  
     let exe_lower = format!("{}\\{}.exe", path, app_name.to_lowercase());
-    std::fs::metadata(exe_lower).is_ok()
+    if std::fs::metadata(&exe_lower).is_ok() {
+        return true;
+    }
+    
+    // Also check if current exe is running from the install directory
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(current_dir) = current_exe.parent() {
+            let current_path = current_dir.to_string_lossy().to_lowercase();
+            let install_path = path.to_lowercase();
+            if current_path == install_path || current_path.starts_with(&format!("{}\\", install_path)) {
+                return true;
+            }
+        }
+    }
+    
+    false
 }
 
 pub fn get_reg(name: &str) -> String {
