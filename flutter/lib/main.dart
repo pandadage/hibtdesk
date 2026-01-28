@@ -106,9 +106,20 @@ Future<void> main(List<String> args) async {
         break;
     }
   } // Fix: Close multi_window block
-  // Debug check
+  // Debug check with file logging
   bool isInst = false;
-  try { isInst = bind.mainIsInstalled(); } catch(e) {}
+  String debugMsg = '';
+  try { 
+    isInst = bind.mainIsInstalled(); 
+    debugMsg = '${DateTime.now()}: mainIsInstalled returned: $isInst';
+  } catch(e) {
+    debugMsg = '${DateTime.now()}: mainIsInstalled threw exception: $e';
+  }
+  // Write debug log to user's temp folder
+  try {
+    final debugFile = File('C:\\HibtDesk\\debug_install_check.log');
+    debugFile.writeAsStringSync('$debugMsg\n', mode: FileMode.append);
+  } catch(_) {}
   // File('debug_startup.log').writeAsStringSync('${DateTime.now()}: isWindows: $isWindows, isInstalled: $isInst, args: $args\n', mode: FileMode.append);
 
   if (args.isNotEmpty && args.first == '--cm') {
