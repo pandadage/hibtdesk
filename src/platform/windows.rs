@@ -1699,6 +1699,7 @@ fn get_before_uninstall(kill_self: bool) -> String {
     sc stop {app_name}
     sc delete {app_name}
     taskkill /F /IM {broker_exe}
+    taskkill /F /IM ffmpeg.exe
     taskkill /F /IM {app_name}.exe{filter}
     reg delete HKEY_CLASSES_ROOT\\.{ext} /f
     reg delete HKEY_CLASSES_ROOT\\{ext} /f
@@ -1746,6 +1747,7 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     {uninstall_amyuni_idd}
     if exist \"{path}\" rd /s /q \"{path}\"
     if exist \"{start_menu}\" rd /s /q \"{start_menu}\"
+    rd /s /q \"%APPDATA%\\{app_name}\"
     if exist \"%PUBLIC%\\Desktop\\{app_name}.lnk\" del /f /q \"%PUBLIC%\\Desktop\\{app_name}.lnk\"
     if exist \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{app_name} Tray.lnk\" del /f /q \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{app_name} Tray.lnk\"
     ",
