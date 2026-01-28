@@ -105,21 +105,29 @@ Future<void> main(List<String> args) async {
       default:
         break;
     }
-  } // Fix: Close multi_window block
-  // Debug check with file logging
+  } // End of multi_window block
+  
+  // Check if installed using pure Dart (FFI not initialized yet!)
+  // Check if exe exists in default install path: C:\HibtDesk\hibtdesk.exe
   bool isInst = false;
-  String debugMsg = '';
-  try { 
-    isInst = bind.mainIsInstalled(); 
-    debugMsg = '${DateTime.now()}: mainIsInstalled returned: $isInst';
-  } catch(e) {
-    debugMsg = '${DateTime.now()}: mainIsInstalled threw exception: $e';
+  if (isWindows) {
+    final systemDrive = Platform.environment['SystemDrive'] ?? 'C:';
+    final installDir = '$systemDrive\\HibtDesk';
+    final exePath1 = '$installDir\\hibtdesk.exe';  // lowercase (actual build output)
+    final exePath2 = '$installDir\\HibtDesk.exe';  // mixed case
+    
+    // Check if any exe exists in install directory
+    isInst = File(exePath1).existsSync() || File(exePath2).existsSync();
+    
+    // Also check if we're running from the install directory
+    if (!isInst) {
+      final currentExe = Platform.resolvedExecutable.toLowerCase().replaceAll('/', '\\');
+      final installDirLower = installDir.toLowerCase();
+      if (currentExe.contains(installDirLower)) {
+        isInst = true;
+      }
+    }
   }
-  // Write debug log to user's temp folder
-  try {
-    final debugFile = File('C:\\HibtDesk\\debug_install_check.log');
-    debugFile.writeAsStringSync('$debugMsg\n', mode: FileMode.append);
-  } catch(_) {}
   // File('debug_startup.log').writeAsStringSync('${DateTime.now()}: isWindows: $isWindows, isInstalled: $isInst, args: $args\n', mode: FileMode.append);
 
   if (args.isNotEmpty && args.first == '--cm') {
