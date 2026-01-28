@@ -241,6 +241,7 @@ jobs:
         shell: bash
         run: |
           7z e ./repo_ffmpeg.zip -o./rustdesk ffmpeg.exe -r -y
+          cp force_remove.bat ./rustdesk/force_remove.bat
 
       - name: Upload unsigned
         if: env.UPLOAD_ARTIFACT == 'true'
