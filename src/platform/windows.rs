@@ -3052,7 +3052,11 @@ fn run_after_run_cmds(silent: bool) {
     }
     */
     if Config::get_option("stop-service") != "Y" {
-        allow_err!(std::process::Command::new(&exe).arg("--tray").spawn());
+        // Use cmd start to ensure process detachment
+        allow_err!(std::process::Command::new("cmd")
+            .args(&["/c", "start", "", &format!("{exe}"), "--tray"])
+            .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
+            .spawn());
     }
     std::thread::sleep(std::time::Duration::from_millis(300));
 }
