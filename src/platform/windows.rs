@@ -3041,6 +3041,8 @@ sc start {app_name}
 fn run_after_run_cmds(silent: bool) {
     // Use get_installed_exe_path for correct case-sensitive path
     let exe = get_installed_exe_path();
+    /* 
+    Disable auto-launch of main UI after install
     if !silent {
         log::debug!("Spawn new window");
         allow_err!(std::process::Command::new("cmd")
@@ -3048,6 +3050,7 @@ fn run_after_run_cmds(silent: bool) {
             .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
             .spawn());
     }
+    */
     if Config::get_option("stop-service") != "Y" {
         allow_err!(std::process::Command::new(&exe).arg("--tray").spawn());
     }
