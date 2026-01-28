@@ -27,9 +27,12 @@ import 'package:window_size/window_size.dart' as window_size;
 import '../widgets/button.dart';
 import 'package:flutter_hbb/desktop/pages/monitor_grid_page.dart';
 import 'package:flutter_hbb/desktop/pages/employee_list_page.dart';
+import 'package:flutter_hbb/desktop/pages/admin_profile_page.dart';
 
 class DesktopHomePage extends StatefulWidget {
-  const DesktopHomePage({Key? key}) : super(key: key);
+  final VoidCallback onLogout;
+  
+  const DesktopHomePage({Key? key, required this.onLogout}) : super(key: key);
 
   @override
   State<DesktopHomePage> createState() => _DesktopHomePageState();
@@ -37,6 +40,10 @@ class DesktopHomePage extends StatefulWidget {
 
 class _DesktopHomePageState extends State<DesktopHomePage> {
   int _selectedIndex = 0;
+
+  void _handleLogout() {
+    widget.onLogout();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +71,11 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                 selectedIcon: Icon(Icons.dashboard),
                 label: Text('监控墙'),
               ),
-              // We can add "Settings" or "About" here later if needed
+              NavigationRailDestination(
+                icon: Icon(Icons.account_circle_outlined),
+                selectedIcon: Icon(Icons.account_circle),
+                label: Text('我的'),
+              ),
             ],
             leading: Column(
               children: [
@@ -92,9 +103,10 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
         return const EmployeeListPage();
       case 1:
         return const MonitorGridPage();
+      case 2:
+        return AdminProfilePage(onLogout: _handleLogout);
       default:
         return const Center(child: Text("Unknown Page"));
     }
   }
 }
-

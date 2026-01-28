@@ -11,31 +11,11 @@ import 'package:window_manager/window_manager.dart';
 // import 'package:flutter/services.dart';
 
 import 'package:flutter_hbb/desktop/pages/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/shared_state.dart';
 
 class DesktopTabPage extends StatefulWidget {
-  const DesktopTabPage({Key? key}) : super(key: key);
-
-  @override
-  State<DesktopTabPage> createState() => _DesktopTabPageState();
-
-  static void onAddSetting(
-      {SettingsTabKey initialPage = SettingsTabKey.general}) {
-    try {
-      DesktopTabController tabController = Get.find<DesktopTabController>();
-      tabController.add(TabInfo(
-          key: kTabLabelSettingPage,
-          label: kTabLabelSettingPage,
-          selectedIcon: Icons.build_sharp,
-          unselectedIcon: Icons.build_outlined,
-          page: DesktopSettingPage(
-            key: const ValueKey(kTabLabelSettingPage),
-            initialTabkey: initialPage,
-          )));
-    } catch (e) {
-      debugPrintStack(label: '$e');
-    }
-  }
+// ... (unchanged)
 }
 
 class _DesktopTabPageState extends State<DesktopTabPage> {
@@ -57,6 +37,12 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
         closable: false,
         page: DesktopHomePage(
           key: const ValueKey(kTabLabelHomePage),
+          onLogout: () {
+            // handle logout
+            setState(() {
+              _isLoggedIn = false;
+            });
+          },
         )));
 
     if (bind.isIncomingOnly()) {
@@ -75,7 +61,20 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     // HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('admin_token');
+    if (token != null && token.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = true;
+        });
+      }
+    }
   }
 
   /*

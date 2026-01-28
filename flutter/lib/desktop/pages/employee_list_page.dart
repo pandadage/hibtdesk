@@ -171,53 +171,76 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
 
     return Column(
       children: [
-        // Clean Search Bar (not using AppBar)
+        // Clean Premium Search Bar
         Container(
-          padding: EdgeInsets.all(12),
+          height: 70,
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
-            border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             children: [
+              // Search Input
               Expanded(
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.transparent),
                   ),
-                  child: TextField(
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: '搜索工号或姓名...',
-                      hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                      border: InputBorder.none,
-                      prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 20),
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
-                    ),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.grey[500], size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: '搜索工号或姓名...',
+                            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.only(bottom: 12), // Center vertically
+                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+                          textAlignVertical: TextAlignVertical.center,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 16),
+              
+              // Refresh Button
               Container(
+                height: 40,
+                width: 40,
                 decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.blue[50],
+                  shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   icon: isLoading 
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Icon(Icons.refresh, color: Colors.white),
+                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.blue, strokeWidth: 2))
+                    : Icon(Icons.refresh, color: Colors.blue, size: 22),
                   onPressed: isLoading ? null : () {
                     setState(() => isLoading = true);
                     _fetchEmployees();
                   },
+                  splashRadius: 24,
                 ),
               ),
             ],

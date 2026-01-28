@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_hbb/common.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -49,8 +50,11 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          // 登录成功，可以保存 token 供后续 API 调用使用
-          // TODO: 保存 token 到全局状态
+          // 登录成功，保存 token 到全局状态
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('admin_token', data['token']);
+          await prefs.setString('admin_username', username);
+          
           widget.onLoginSuccess();
         } else {
           setState(() {
