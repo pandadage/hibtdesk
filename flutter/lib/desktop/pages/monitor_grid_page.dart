@@ -25,10 +25,20 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _fetchOnlineEmployees();
     _refreshTimer = Timer.periodic(Duration(seconds: 10), (timer) {
       _fetchOnlineEmployees();
     });
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        gridSize = prefs.getInt('monitor_grid_size') ?? 16;
+      });
+    }
   }
 
   @override
@@ -98,7 +108,12 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
   Widget _buildGridOption(int value) {
     final bool isSelected = gridSize == value;
     return InkWell(
-      onTap: () => setState(() => gridSize = value),
+      onTap: () {
+        setState(() => gridSize = value);
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setInt('monitor_grid_size', value);
+        });
+      },
       borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -124,6 +139,7 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
     int crossAxisCount = 4;
     if (gridSize == 25) crossAxisCount = 5;
     if (gridSize == 36) crossAxisCount = 6;
+    if (gridSize == 64) crossAxisCount = 8;
 
     return Column(
       children: [
