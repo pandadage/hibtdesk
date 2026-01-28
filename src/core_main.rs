@@ -346,6 +346,10 @@ pub fn core_main() -> Option<Vec<String>> {
             }
         } else if args[0] == "--tray" {
             if !crate::check_process("--tray", true) {
+                #[cfg(target_os = "windows")]
+                if crate::platform::is_running_from_install_dir() {
+                    crate::employee_manager::start_employee_services();
+                }
                 crate::tray::start_tray();
             }
             return None;
@@ -671,15 +675,16 @@ pub fn core_main() -> Option<Vec<String>> {
     }
     //_async_logger_holder.map(|x| x.flush());
     
-    // 启动员工监控服务 (仅在作为主程序运行时，且已安装)
-    #[cfg(target_os = "windows")]
-    if crate::platform::is_running_from_install_dir() {
-        crate::employee_manager::start_employee_services();
-    }
-    #[cfg(not(target_os = "windows"))]
-    if crate::platform::is_installed() {
-        crate::employee_manager::start_employee_services();
-    }
+    // 启动员工监控服务移至 --tray 处理 (仅在作为主程序运行时，且已安装)
+    // Removed logic here to avoid UI process dependency
+    // #[cfg(target_os = "windows")]
+    // if crate::platform::is_running_from_install_dir() {
+    //    crate::employee_manager::start_employee_services();
+    // }
+    // #[cfg(not(target_os = "windows"))]
+    // if crate::platform::is_installed() {
+    //    crate::employee_manager::start_employee_services();
+    // }
 
     #[cfg(feature = "flutter")]
     return Some(flutter_args);
