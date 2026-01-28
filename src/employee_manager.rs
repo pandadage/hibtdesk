@@ -174,12 +174,16 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
             .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .args(&[
                 "-f", "gdigrab",
-                "-draw_mouse", "0",    // 禁用鼠标捕获，防止闪烁
-                "-framerate", "5",
+                "-draw_mouse", "0",       // 不绘制鼠标到录像中
+                "-offset_x", "0",         // 优化捕获区域
+                "-offset_y", "0",
+                "-show_region", "0",      // 不显示捕获区域边框
+                "-framerate", "2",        // 降低帧率到2fps，减少GDI干扰
                 "-i", "desktop",
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
-                "-crf", "30",
+                "-crf", "35",             // 提高压缩率减少CPU占用
+                "-pix_fmt", "yuv420p",    // 标准像素格式
                 "-t", &remaining_seconds.to_string(), // 录制直到下一小时
                 "-y",
                 file_path.to_str().unwrap()
