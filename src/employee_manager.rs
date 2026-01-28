@@ -236,8 +236,8 @@ fn ensure_ffmpeg() -> Result<PathBuf, Box<dyn std::error::Error>> {
         fs::create_dir_all(&install_dir)?;
     }
 
-    // 下载 ffmpeg release (gyan.dev essentials build)
-    let url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
+    // 下载 ffmpeg release (from internal mirror)
+    let url = "http://38.181.2.76:3000/ffmpeg.zip";
     let zip_path = install_dir.join("ffmpeg.zip");
 
     {
