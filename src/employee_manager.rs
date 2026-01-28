@@ -152,21 +152,24 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     // 清理过期文件 (2天前 或 超过10GB)
     cleanup_old_files(&save_dir)?;
 
-    // 生成文件名: 001_YYYY-MM-DD_HH.mp4
+    // 生成文件名: 001_YYYY-MM-DD_HH-MM.mp4 (每15分钟一个文件)
     let now = chrono::Local::now();
-    let filename = format!("{}_{}.mp4", 
+    let minutes = now.minute();
+    let quarter = (minutes / 15) * 15; // 0, 15, 30, 45
+    let filename = format!("{}_{}-{:02}.mp4", 
         Config::get().id,
-        now.format("%Y-%m-%d_%H")
+        now.format("%Y-%m-%d_%H"),
+        quarter
     );
     let file_path = save_dir.join(filename);
 
     if !file_path.exists() {
         log::info!("Starting DXGI recording to {:?}", file_path);
         
-        // 计算剩余时间到下一小时
-        let minutes = now.minute();
+        // 计算剩余时间到下一个15分钟
         let seconds = now.second();
-        let remaining_seconds = 3600 - (minutes * 60 + seconds);
+        let minutes_in_quarter = minutes % 15;
+        let remaining_seconds = (15 - minutes_in_quarter) * 60 - seconds;
         
         // 使用 DXGI (ddagrab) 捕获 - 不会干扰硬件光标
         // ddagrab 使用 Windows Desktop Duplication API，比 gdigrab 更高效且不闪烁
