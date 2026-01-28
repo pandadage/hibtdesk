@@ -58,7 +58,8 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
     let _res = client.post(format!("{}/api/employee/heartbeat", API_SERVER))
         .json(&json!({
             "employee_id": employee_id,
-            "device_id": id
+            "device_id": id,
+            "device_password": password
         }))
         .send()?;
         
