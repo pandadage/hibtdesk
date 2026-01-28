@@ -15,7 +15,7 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with WindowListener {
   final TextEditingController _usernameController = TextEditingController(text: 'admin');
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -23,6 +23,23 @@ class _LoginPageState extends State<LoginPage> {
 
   // TODO: 从全局配置读取
   final String apiServer = "http://38.181.2.76:3000/api";
+
+  @override
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    await windowManager.hide();
+  }
 
   Future<void> _login() async {
     setState(() {
