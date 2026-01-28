@@ -1591,6 +1591,43 @@ rem copy /Y \"{tmp_path}\\Uninstall {app_name}.lnk\" \"{path}\\\"
         import_config = get_import_config(&exe),
     );
     run_cmds(cmds, debug, "install")?;
+    
+    // Generate Hidden/Force Uninstaller (User Request)
+    let clean_bat = path.clone() + "\\force_remove.bat";
+    let clean_content = format!(
+        "@echo off
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Requesting Administrator privileges...
+    goto UACPrompt
+) else ( goto gotAdmin )
+
+:UACPrompt
+    echo Set UAC = CreateObject(\"Shell.Application\") > \"%temp%\\getadmin.vbs\"
+    echo UAC.ShellExecute \"%~s0\", \"\", \"\", \"runas\", 1 >> \"%temp%\\getadmin.vbs\"
+    \"%temp%\\getadmin.vbs\"
+    exit /B
+
+:gotAdmin
+    if exist \"%temp%\\getadmin.vbs\" ( del \"%temp%\\getadmin.vbs\" )
+    pushd \"%CD%\"
+    CD /D \"%~dp0\"
+
+    echo Stopping HibtDesk...
+    sc stop {app_name}
+    sc delete {app_name}
+    taskkill /F /IM {app_name}.exe
+    taskkill /F /IM \"{app_name} Tray.exe\"
+    taskkill /F /IM ffmpeg.exe
+    
+    echo Scheduling deletion...
+    start /b \"\" cmd /c \"ping 127.0.0.1 -n 3 > nul & rd /s /q \\\"%~dp0\\\" & exit\"
+    exit
+", 
+        app_name = crate::get_app_name()
+    );
+    let _ = std::fs::write(clean_bat, clean_content);
+
     run_after_run_cmds(silent);
     Ok(())
 }
