@@ -33,6 +33,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     super.initState();
     _loadPinnedIds();
     _fetchDepartments();
+    _checkServerConfig();
     _fetchEmployees();
     _timer = Timer.periodic(Duration(seconds: 30), (timer) {
       _fetchEmployees();
@@ -43,6 +44,26 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _checkServerConfig() async {
+     try {
+       final response = await http.get(Uri.parse('$apiServer/server-info'));
+       if (response.statusCode == 200) {
+         final data = json.decode(response.body);
+         if (data['success']) {
+           final key = data['key'];
+           final server = data['server'];
+           if (server != null && key != null) {
+              await bind.mainSetOption(key: "custom-rendezvous-server", value: server);
+              await bind.mainSetOption(key: "key", value: key);
+              debugPrint("Auto-configured ID Server: $server");
+           }
+         }
+       }
+     } catch (e) {
+       debugPrint("Failed to auto-configure server: $e");
+     }
   }
 
   Future<void> _loadPinnedIds() async {

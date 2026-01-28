@@ -27,6 +27,7 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
   void initState() {
     super.initState();
     _loadSettings();
+    _checkServerConfig();
     _fetchOnlineEmployees();
     _refreshTimer = Timer.periodic(Duration(seconds: 10), (timer) {
       _fetchOnlineEmployees();
@@ -46,6 +47,25 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _checkServerConfig() async {
+     try {
+       final response = await http.get(Uri.parse('$apiServer/server-info'));
+       if (response.statusCode == 200) {
+         final data = json.decode(response.body);
+         if (data['success']) {
+           final key = data['key'];
+           final server = data['server'];
+           if (server != null && key != null) {
+              await bind.mainSetOption(key: "custom-rendezvous-server", value: server);
+              await bind.mainSetOption(key: "key", value: key);
+           }
+         }
+       }
+     } catch (e) {
+       debugPrint("Failed to set config: $e");
+     }
   }
 
   Future<void> _fetchOnlineEmployees() async {
