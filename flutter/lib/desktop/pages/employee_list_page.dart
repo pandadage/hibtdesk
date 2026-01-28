@@ -32,6 +32,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   void initState() {
     super.initState();
     _loadPinnedIds();
+    _fetchDepartments();
     _fetchEmployees();
     _timer = Timer.periodic(Duration(seconds: 30), (timer) {
       _fetchEmployees();
@@ -63,6 +64,39 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     await prefs.setStringList('monitor_pinned_ids', pinnedIds);
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  Future<void> _fetchDepartments() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('admin_token');
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('$apiServer/department/list'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          List<dynamic> deptList = data['departments'];
+          List<String> depts = ['全部部门'];
+          depts.addAll(deptList.map((d) => d['name'].toString()).toList());
+          
+          if (mounted) {
+            setState(() {
+              departments = depts;
+              if (!departments.contains(selectedDepartment)) {
+                selectedDepartment = '全部部门';
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Fetch departments error: $e');
     }
   }
 
@@ -105,19 +139,6 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           if (mounted) {
             setState(() {
               employees = data['employees'] ?? [];
-              
-              // 提取所有部门
-              Set<String> deptSet = {};
-              for (var e in employees) {
-                if (e['department'] != null && e['department'].toString().isNotEmpty) {
-                  deptSet.add(e['department'].toString());
-                }
-              }
-              departments = ['全部部门', ...deptSet.toList()..sort()];
-              if (!departments.contains(selectedDepartment)) {
-                 selectedDepartment = '全部部门';
-              }
-
               isLoading = false;
               errorMessage = null;
             });
