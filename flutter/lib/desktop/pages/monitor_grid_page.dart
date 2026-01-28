@@ -95,22 +95,26 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
       }
   }
 
-  PopupMenuItem<int> _buildGridMenuItem(int value) {
-    return PopupMenuItem<int>(
-      value: value,
-      child: Row(
-        children: [
-          Icon(
-            gridSize == value ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-            size: 18,
-            color: gridSize == value ? Colors.blue : Colors.grey[400],
+  Widget _buildGridOption(int value) {
+    final bool isSelected = gridSize == value;
+    return InkWell(
+      onTap: () => setState(() => gridSize = value),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: isSelected ? Colors.blue : Colors.grey[300]!),
+        ),
+        child: Text(
+          '$value 宫格',
+          style: TextStyle(
+            color: isSelected ? Colors.blue : Colors.grey[600],
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
-          SizedBox(width: 8),
-          Text('$value 宫格', style: TextStyle(
-            color: gridSize == value ? Colors.blue : Colors.grey[800],
-            fontWeight: gridSize == value ? FontWeight.bold : FontWeight.normal,
-          )),
-        ],
+        ),
       ),
     );
   }
@@ -164,49 +168,17 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
               ),
               Spacer(),
               // Grid Size Selector
-              PopupMenuButton<int>(
-                offset: Offset(0, 40),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey[200]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.grid_view_rounded, size: 18, color: Colors.blue),
-                      SizedBox(width: 8),
-                      Text(
-                        '$gridSize 宫格',
-                        style: TextStyle(
-                          color: Colors.grey[800],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.grey[600]),
-                    ],
-                  ),
-                ),
-                onSelected: (int value) {
-                  setState(() {
-                    gridSize = value;
-                  });
-                },
-                itemBuilder: (context) => [
-                  _buildGridMenuItem(16),
-                  _buildGridMenuItem(25),
-                  _buildGridMenuItem(36),
+              // Grid Size Selector
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   _buildGridOption(16),
+                   SizedBox(width: 8),
+                   _buildGridOption(25),
+                   SizedBox(width: 8),
+                   _buildGridOption(36),
+                   SizedBox(width: 8),
+                   _buildGridOption(64),
                 ],
               ),
               SizedBox(width: 16),
