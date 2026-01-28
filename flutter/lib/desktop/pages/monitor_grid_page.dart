@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:flutter_hbb/models/server_model.dart';
 import 'package:flutter_hbb/common.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MonitorGridPage extends StatefulWidget {
   const MonitorGridPage({Key? key}) : super(key: key);
@@ -38,18 +39,12 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
 
   Future<void> _fetchOnlineEmployees() async {
     try {
-      // 获取 token (如果需要的话，这里暂时先直接请求，复用 EmployeeListPage 的逻辑更佳，但这里先简单处理)
-      // 注意：这里使用的是 online_only=true，如果 API 需要 token，则必须先登录。
-      // 为保持一致性，建议也检查 token。但 monitor wall 可能是公开的？
-      // 根据之前的 API 分析，/api/employee/list 需要 authMiddleware。
+      final prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('admin_token');
       
       Map<String, String> headers = {};
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
-      } else {
-        // 尝试自动登录获取 token
-         await _autoLogin();
-         if (token != null) headers['Authorization'] = 'Bearer $token';
       }
 
       final response = await http.get(
@@ -60,38 +55,27 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
-          setState(() {
-            onlineEmployees = data['employees'];
-          });
+          if (mounted) {
+            setState(() {
+              onlineEmployees = data['employees'];
+            });
+          }
         }
       }
     } catch (e) {
-      print('Fetch online employees error: $e');
+      debugPrint('Fetch online employees error: $e');
     }
-  }
-
-  Future<void> _autoLogin() async {
-     try {
-        final loginRes = await http.post(
-          Uri.parse('$apiServer/admin/login'),
-          body: json.encode({'username': 'admin', 'password': 'admin123'}),
-          headers: {'Content-Type': 'application/json'},
-        );
-        if (loginRes.statusCode == 200) {
-          final loginData = json.decode(loginRes.body);
-          if (loginData['success']) {
-            token = loginData['token'];
-          }
-        }
-     } catch (e) {
-       print("Auto login failed: $e");
-     }
   }
 
   void _connect(String employeeId) async {
       try {
-        if (token == null) await _autoLogin();
-        if (token == null) return;
+        final prefs = await SharedPreferences.getInstance();
+        token = prefs.getString('admin_token');
+        
+        if (token == null) {
+          BotToast.showText(text: '未登录，请先登录');
+          return;
+        }
 
         final response = await http.get(
           Uri.parse('$apiServer/employee/$employeeId'),
@@ -109,6 +93,26 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
       } catch (e) {
         print("Connect error: $e");
       }
+  }
+
+  PopupMenuItem<int> _buildGridMenuItem(int value) {
+    return PopupMenuItem<int>(
+      value: value,
+      child: Row(
+        children: [
+          Icon(
+            gridSize == value ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+            size: 18,
+            color: gridSize == value ? Colors.blue : Colors.grey[400],
+          ),
+          SizedBox(width: 8),
+          Text('$value 宫格', style: TextStyle(
+            color: gridSize == value ? Colors.blue : Colors.grey[800],
+            fontWeight: gridSize == value ? FontWeight.bold : FontWeight.normal,
+          )),
+        ],
+      ),
+    );
   }
 
   @override
@@ -160,27 +164,50 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
               ),
               Spacer(),
               // Grid Size Selector
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey[300]!),
+              PopupMenuButton<int>(
+                offset: Offset(0, 40),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.grey[200]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.grid_view_rounded, size: 18, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Text(
+                        '$gridSize 宫格',
+                        style: TextStyle(
+                          color: Colors.grey[800],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.grey[600]),
+                    ],
+                  ),
                 ),
-                child: DropdownButton<int>(
-                  value: gridSize,
-                  underline: SizedBox(),
-                  icon: Icon(Icons.grid_view, size: 20, color: Colors.grey[600]),
-                  style: TextStyle(color: Colors.grey[800], fontSize: 14),
-                  items: [
-                    DropdownMenuItem(value: 16, child: Text('16 宫格')),
-                    DropdownMenuItem(value: 25, child: Text('25 宫格')),
-                    DropdownMenuItem(value: 36, child: Text('36 宫格')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => gridSize = v);
-                  },
-                ),
+                onSelected: (int value) {
+                  setState(() {
+                    gridSize = value;
+                  });
+                },
+                itemBuilder: (context) => [
+                  _buildGridMenuItem(16),
+                  _buildGridMenuItem(25),
+                  _buildGridMenuItem(36),
+                ],
               ),
               SizedBox(width: 16),
               IconButton(

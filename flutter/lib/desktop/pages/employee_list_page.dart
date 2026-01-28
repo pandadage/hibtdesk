@@ -6,6 +6,7 @@ import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/models/server_model.dart';
 import 'package:provider/provider.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EmployeeListPage extends StatefulWidget {
   const EmployeeListPage({Key? key}) : super(key: key);
@@ -43,19 +44,18 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     if (!mounted) return;
     
     try {
-      // 如果没有 token，先登录获取
+      // 获取存储的 token
+      final prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('admin_token');
+
       if (token == null) {
-        final loginRes = await http.post(
-          Uri.parse('$apiServer/admin/login'),
-          body: json.encode({'username': 'admin', 'password': 'admin123'}),
-          headers: {'Content-Type': 'application/json'},
-        );
-        if (loginRes.statusCode == 200) {
-          final loginData = json.decode(loginRes.body);
-          if (loginData['success']) {
-            token = loginData['token'];
-          }
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+            errorMessage = '未登录，请先登录管理员账号';
+          });
         }
+        return;
       }
       
       if (token == null) {
