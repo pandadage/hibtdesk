@@ -1791,38 +1791,42 @@ pub fn is_installed() -> bool {
     let path = get_default_install_path();
     let app_name = crate::get_app_name();
     
-    log::info!("[is_installed] Checking installation. app_name={}, path={}", app_name, path);
+    // Helper to normalize Windows path: remove \\?\ prefix and convert to lowercase
+    fn normalize_path(p: &str) -> String {
+        let s = p.strip_prefix(r"\\?\").unwrap_or(p);
+        s.to_lowercase().replace("/", r"\").trim_end_matches('\\').to_owned()
+    }
+    
+    let install_path_normalized = normalize_path(&path);
     
     // Check for exact case: C:\HibtDesk\HibtDesk.exe
     let exe = format!("{}\\{}.exe", path, app_name);
-    log::info!("[is_installed] Checking exe: {}", exe);
     if std::fs::metadata(&exe).is_ok() {
-        log::info!("[is_installed] Found exact case exe, returning true");
         return true;
     }
     
     // Check for lowercase: C:\HibtDesk\hibtdesk.exe  
     let exe_lower = format!("{}\\{}.exe", path, app_name.to_lowercase());
-    log::info!("[is_installed] Checking lowercase exe: {}", exe_lower);
     if std::fs::metadata(&exe_lower).is_ok() {
-        log::info!("[is_installed] Found lowercase exe, returning true");
         return true;
     }
     
-    // Also check if current exe is running from the install directory
+    // Check if current exe is running from the install directory
     if let Ok(current_exe) = std::env::current_exe() {
         if let Some(current_dir) = current_exe.parent() {
-            let current_path = current_dir.to_string_lossy().to_lowercase();
-            let install_path = path.to_lowercase();
-            log::info!("[is_installed] current_path={}, install_path={}", current_path, install_path);
-            if current_path == install_path || current_path.starts_with(&format!("{}\\", install_path)) {
-                log::info!("[is_installed] Running from install dir, returning true");
+            let current_path_normalized = normalize_path(&current_dir.to_string_lossy());
+            if current_path_normalized == install_path_normalized {
                 return true;
             }
         }
+        
+        // Also check if current exe path contains the install path
+        let current_exe_normalized = normalize_path(&current_exe.to_string_lossy());
+        if current_exe_normalized.starts_with(&format!("{}\\", install_path_normalized)) {
+            return true;
+        }
     }
     
-    log::info!("[is_installed] All checks failed, returning false");
     false
 }
 
