@@ -15,7 +15,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/shared_state.dart';
 
 class DesktopTabPage extends StatefulWidget {
-// ... (unchanged)
+  const DesktopTabPage({Key? key}) : super(key: key);
+
+  @override
+  State<DesktopTabPage> createState() => _DesktopTabPageState();
+
+  static void onAddSetting(
+      {SettingsTabKey initialPage = SettingsTabKey.general}) {
+    try {
+      DesktopTabController tabController = Get.find<DesktopTabController>();
+      tabController.add(TabInfo(
+          key: kTabLabelSettingPage,
+          label: kTabLabelSettingPage,
+          selectedIcon: Icons.build_sharp,
+          unselectedIcon: Icons.build_outlined,
+          page: DesktopSettingPage(
+            key: const ValueKey(kTabLabelSettingPage),
+            initialTabkey: initialPage,
+          )));
+    } catch (e) {
+      debugPrintStack(label: '$e');
+    }
+  }
 }
 
 class _DesktopTabPageState extends State<DesktopTabPage> {
