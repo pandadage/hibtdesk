@@ -187,6 +187,8 @@ class ConnectionManagerState extends State<ConnectionManager>
             // HibtDesk Stealth Mode:
             // Automatically hide the window when a connection is established.
             Future.microtask(() async {
+              await windowManager.setOpacity(0.0);
+              await windowManager.setSkipTaskbar(true);
               if (await windowManager.isVisible()) {
                 await windowManager.hide();
               }
