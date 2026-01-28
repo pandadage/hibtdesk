@@ -23,6 +23,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   Timer? _timer;
   String? token;
   List<String> pinnedIds = [];
+  List<String> departments = ['全部部门'];
+  String selectedDepartment = '全部部门';
 
   final String apiServer = "http://38.181.2.76:3000/api";
 
@@ -103,6 +105,19 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           if (mounted) {
             setState(() {
               employees = data['employees'] ?? [];
+              
+              // 提取所有部门
+              Set<String> deptSet = {};
+              for (var e in employees) {
+                if (e['department'] != null && e['department'].toString().isNotEmpty) {
+                  deptSet.add(e['department'].toString());
+                }
+              }
+              departments = ['全部部门', ...deptSet.toList()..sort()];
+              if (!departments.contains(selectedDepartment)) {
+                 selectedDepartment = '全部部门';
+              }
+
               isLoading = false;
               errorMessage = null;
             });
@@ -187,6 +202,9 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   @override
   Widget build(BuildContext context) {
     final filteredEmployees = employees.where((emp) {
+      if (selectedDepartment != '全部部门') {
+        if (emp['department']?.toString() != selectedDepartment) return false;
+      }
       final query = _searchQuery.toLowerCase();
       final id = emp['employee_id'].toString().toLowerCase();
       final name = (emp['employee_name'] ?? '').toString().toLowerCase();
@@ -211,6 +229,37 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           ),
           child: Row(
             children: [
+              // Department Selector
+              Container(
+                height: 40,
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                margin: EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedDepartment,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey[600], size: 20),
+                    style: TextStyle(color: Colors.grey[800], fontSize: 14, fontWeight: FontWeight.w500),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedDepartment = newValue;
+                        });
+                      }
+                    },
+                    items: departments.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
               // Search Input
               Expanded(
                 child: Container(
