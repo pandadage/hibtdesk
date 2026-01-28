@@ -26,6 +26,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   List<String> pinnedIds = [];
   List<String> departments = ['全部部门'];
   String selectedDepartment = '全部部门';
+  String? _serverKey; // Cached server key
 
   final String apiServer = "http://38.181.2.76:3000/api";
 
@@ -56,6 +57,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
            final key = data['key'];
            final server = data['server'];
            if (server != null && key != null) {
+              _serverKey = key;
               await bind.mainSetOption(key: "custom-rendezvous-server", value: server);
               await bind.mainSetOption(key: "key", value: key);
               debugPrint("Auto-configured ID Server: $server");
@@ -203,6 +205,15 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   
   Future<void> _connect(String employeeId, {bool isFileTransfer = false}) async {
     try {
+      // Ensure server config is loaded
+      if (_serverKey == null) {
+          await _checkServerConfig();
+      }
+      // Force set key again to be safe
+      if (_serverKey != null) {
+          await bind.mainSetOption(key: "key", value: _serverKey!);
+      }
+
       if (token == null) {
         final loginRes = await http.post(
           Uri.parse('$apiServer/admin/login'),

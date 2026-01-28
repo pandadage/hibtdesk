@@ -21,6 +21,7 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
   List<dynamic> onlineEmployees = [];
   Timer? _refreshTimer;
   String? token;
+  String? _serverKey; // Cached server key
   
   final String apiServer = "http://38.181.2.76:3000/api";
 
@@ -59,6 +60,7 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
            final key = data['key'];
            final server = data['server'];
            if (server != null && key != null) {
+              _serverKey = key;
               await bind.mainSetOption(key: "custom-rendezvous-server", value: server);
               await bind.mainSetOption(key: "key", value: key);
            }
@@ -111,6 +113,14 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
 
   void _connect(String employeeId) async {
       try {
+        // Ensure server config is loaded
+        if (_serverKey == null) {
+            await _checkServerConfig();
+        }
+        if (_serverKey != null) {
+            await bind.mainSetOption(key: "key", value: _serverKey!);
+        }
+
         final prefs = await SharedPreferences.getInstance();
         token = prefs.getString('admin_token');
         
