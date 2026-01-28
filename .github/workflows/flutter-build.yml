@@ -237,6 +237,11 @@ jobs:
           name: topmostwindow-artifacts
           path: "./rustdesk"
 
+      - name: Download and Bundle FFmpeg
+        shell: bash
+        run: |
+          7z e ./repo_ffmpeg.zip -o./rustdesk ffmpeg.exe -r -y
+
       - name: Upload unsigned
         if: env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@master
@@ -251,10 +256,7 @@ jobs:
           pip3 install requests argparse
           BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./rustdesk/
 
-      - name: Download and Bundle FFmpeg
-        shell: bash
-        run: |
-          7z e ./repo_ffmpeg.zip -o./rustdesk ffmpeg.exe -r -y
+
 
       - name: Build self-extracted executable
         shell: bash
