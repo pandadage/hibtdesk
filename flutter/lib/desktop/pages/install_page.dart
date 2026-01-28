@@ -291,9 +291,9 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     }
 
     // Step 3: Register device to backend API
-    bool registered = await _registerDevice(employeeId, deviceId, devicePassword, deviceName);
-    if (!registered) {
-      BotToast.showText(text: "设备注册失败，请检查网络连接");
+    Map<String, dynamic> regResult = await _registerDevice(employeeId, deviceId, devicePassword, deviceName);
+    if (!regResult['success']) {
+      BotToast.showText(text: regResult['message'] ?? "设备注册失败，请检查网络连接");
       btnEnabled.value = true;
       showProgress.value = false;
       return;
@@ -316,7 +316,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     bind.installInstallMe(options: args, path: controller.text);
   }
 
-  Future<bool> _registerDevice(String employeeId, String deviceId, String devicePassword, String deviceName) async {
+  Future<Map<String, dynamic>> _registerDevice(String employeeId, String deviceId, String devicePassword, String deviceName) async {
     try {
       final url = Uri.parse("http://38.181.2.76:3000/api/employee/register");
       final response = await http.post(
@@ -332,12 +332,12 @@ class _InstallPageBodyState extends State<_InstallPageBody>
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['success'] == true;
+        return {"success": data['success'] == true, "message": data['message']};
       }
-      return false;
+      return {"success": false, "message": "服务器响应错误"};
     } catch (e) {
       debugPrint("Register device failed: $e");
-      return false;
+      return {"success": false, "message": "网络请求失败"};
     }
   }
 
@@ -353,10 +353,14 @@ class _InstallPageBodyState extends State<_InstallPageBody>
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // Assuming API returns { "success": true, "exists": true } or similar
-        // Adjust based on real API. Assuming 200 OK means found for now, 
-        // or check data['success']
-        return data['success'] == true;
+        if (data['success'] == true) {
+             if (data['employee'] != null && data['employee']['is_installed'] == 1) {
+                 BotToast.showText(text: "该工号已激活/已安装，禁止重复使用");
+                 return false;
+             }
+             return true;
+        }
+        return false;
       }
       return false; 
     } catch (e) {
