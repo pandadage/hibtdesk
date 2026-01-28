@@ -161,30 +161,26 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     let file_path = save_dir.join(filename);
 
     if !file_path.exists() {
-        log::info!("Starting recording to {:?}", file_path);
+        log::info!("Starting DXGI recording to {:?}", file_path);
         
         // 计算剩余时间到下一小时
         let minutes = now.minute();
         let seconds = now.second();
         let remaining_seconds = 3600 - (minutes * 60 + seconds);
         
-        // 使用绝对路径调用 ffmpeg
+        // 使用 DXGI (ddagrab) 捕获 - 不会干扰硬件光标
+        // ddagrab 使用 Windows Desktop Duplication API，比 gdigrab 更高效且不闪烁
         use std::os::windows::process::CommandExt;
-        let status = Command::new(ffmpeg_path)
+        let status = Command::new(&ffmpeg_path)
             .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .args(&[
-                "-f", "gdigrab",
-                "-draw_mouse", "0",       // 不绘制鼠标到录像中
-                "-offset_x", "0",         // 优化捕获区域
-                "-offset_y", "0",
-                "-show_region", "0",      // 不显示捕获区域边框
-                "-framerate", "2",        // 降低帧率到2fps，减少GDI干扰
-                "-i", "desktop",
+                "-f", "lavfi",
+                "-i", "ddagrab=draw_mouse=0:framerate=2",  // DXGI捕获，2fps，无鼠标
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
-                "-crf", "35",             // 提高压缩率减少CPU占用
-                "-pix_fmt", "yuv420p",    // 标准像素格式
-                "-t", &remaining_seconds.to_string(), // 录制直到下一小时
+                "-crf", "35",
+                "-pix_fmt", "yuv420p",
+                "-t", &remaining_seconds.to_string(),
                 "-y",
                 file_path.to_str().unwrap()
             ])
@@ -193,7 +189,29 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
             .status();
             
         match status {
-            Ok(s) => log::info!("Recording finished: {:?}", s),
+            Ok(s) if s.success() => log::info!("DXGI recording finished successfully"),
+            Ok(s) => {
+                log::warn!("DXGI recording failed (exit: {:?}), trying gdigrab fallback", s.code());
+                // 回退到 gdigrab
+                let _ = Command::new(&ffmpeg_path)
+                    .creation_flags(0x08000000)
+                    .args(&[
+                        "-f", "gdigrab",
+                        "-draw_mouse", "0",
+                        "-framerate", "2",
+                        "-i", "desktop",
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-crf", "35",
+                        "-pix_fmt", "yuv420p",
+                        "-t", &remaining_seconds.to_string(),
+                        "-y",
+                        file_path.to_str().unwrap()
+                    ])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status();
+            }
             Err(e) => log::error!("Failed to start ffmpeg: {}", e),
         }
     }
