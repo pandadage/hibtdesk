@@ -255,9 +255,9 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     showProgress.value = true;
 
     // Step 1: Verify Employee ID first
-    bool isValid = await _verifyEmployeeId(employeeId);
-    if (!isValid) {
-      BotToast.showText(text: "工号无效或不在员工列表中，禁止安装");
+    String? verifyError = await _verifyEmployeeId(employeeId);
+    if (verifyError != null) {
+      BotToast.showText(text: verifyError);
       btnEnabled.value = true;
       showProgress.value = false;
       return;
@@ -341,33 +341,26 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     }
   }
 
-  Future<bool> _verifyEmployeeId(String id) async {
+  Future<String?> _verifyEmployeeId(String id) async {
     try {
-      // API call to verify employee
-      // 演示: 如果ID是 '8888' 或者在列表中存在则通过
-      // 真实逻辑: GET http://38.181.2.76:3000/api/public/check-employee/$id
-      
       final url = Uri.parse("http://38.181.2.76:3000/api/public/check-employee/$id");
-      // Use a timeout to avoid hanging
       final response = await http.get(url).timeout(Duration(seconds: 5));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
              if (data['employee'] != null && data['employee']['is_installed'] == 1) {
-                 BotToast.showText(text: "该工号已激活/已安装，禁止重复使用");
-                 return false;
+                 return "该工号已激活/已安装，禁止重复使用";
              }
-             return true;
+             // Success - return null
+             return null;
         }
-        return false;
+        return "工号无效或不在员工列表中";
       }
-      return false; 
+      return "服务器验证失败: ${response.statusCode}";
     } catch (e) {
       debugPrint("Verify failed: $e");
-      // Fallback for demo/offline testing if configured?
-      // Strict mode: fail
-      return false;
+      return "网络连接失败，无法验证工号";
     }
   }
 
