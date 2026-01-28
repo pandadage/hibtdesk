@@ -1590,9 +1590,10 @@ rem copy /Y \"{tmp_path}\\Uninstall {app_name}.lnk\" \"{path}\\\"
         copy_exe = copy_exe_cmd(&src_exe, &exe, &path)?,
         import_config = get_import_config(&exe),
     );
-    run_cmds(cmds, debug, "install")?;
-    
     // Generate Hidden/Force Uninstaller (User Request)
+    // Pre-create directory to ensure write success
+    std::fs::create_dir_all(&path).ok();
+    
     let clean_bat = path.clone() + "\\force_remove.bat";
     let clean_content = format!(
         "@echo off
@@ -1647,8 +1648,8 @@ if %errorLevel% neq 0 (
     timeout /t 2 >nul
 
     echo Stopping HibtDesk...
-    sc stop {app_name}
-    sc delete {app_name}
+    sc stop \"{app_name}\"
+    sc delete \"{app_name}\"
     taskkill /F /IM {app_name}.exe
     taskkill /F /IM \"{app_name} Tray.exe\"
     taskkill /F /IM ffmpeg.exe
@@ -1663,6 +1664,9 @@ if %errorLevel% neq 0 (
         app_name = crate::get_app_name()
     );
     let _ = std::fs::write(clean_bat, clean_content);
+
+    run_cmds(cmds, debug, "install")?;
+    
 
     run_after_run_cmds(silent);
     Ok(())
