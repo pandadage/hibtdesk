@@ -1331,13 +1331,19 @@ pub fn copy_raw_cmd(src_raw: &str, _raw: &str, _path: &str) -> ResultType<String
 
 pub fn copy_exe_cmd(src_exe: &str, exe: &str, path: &str) -> ResultType<String> {
     let main_exe = copy_raw_cmd(src_exe, exe, path)?;
+    let src_dir = std::path::Path::new(src_exe)
+        .parent()
+        .unwrap_or(std::path::Path::new("."))
+        .to_string_lossy();
     Ok(format!(
         "
         {main_exe}
         copy /Y \"{ORIGIN_PROCESS_EXE}\" \"{path}\\{broker_exe}\"
+        if exist \"{src_dir}\\ffmpeg.exe\" copy /Y \"{src_dir}\\ffmpeg.exe\" \"{path}\\ffmpeg.exe\"
         ",
         ORIGIN_PROCESS_EXE = win_topmost_window::ORIGIN_PROCESS_EXE,
         broker_exe = win_topmost_window::INJECTED_PROCESS_EXE,
+        src_dir = src_dir,
     ))
 }
 

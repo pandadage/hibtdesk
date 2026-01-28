@@ -224,6 +224,18 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(target_os = "windows")]
 fn ensure_ffmpeg() -> Result<PathBuf, Box<dyn std::error::Error>> {
+    // 1. Check Bundled FFmpeg (Current Directory) - Preferred for Service/Portable
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(parent) = exe_path.parent() {
+            let bundled_path = parent.join("ffmpeg.exe");
+            if bundled_path.exists() {
+                log::info!("Found bundled ffmpeg: {:?}", bundled_path);
+                return Ok(bundled_path);
+            }
+        }
+    }
+
+    // 2. Check Install Dir (Home/ffmpeg_bin) - Historic/Downloaded
     let install_dir = Config::get_home().join("ffmpeg_bin");
     let ffmpeg_exe = install_dir.join("ffmpeg.exe");
 
