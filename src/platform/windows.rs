@@ -1830,6 +1830,33 @@ pub fn is_installed() -> bool {
     false
 }
 
+pub fn is_running_from_install_dir() -> bool {
+    let path = get_default_install_path();
+    
+    fn normalize_path(p: &str) -> String {
+        let s = p.strip_prefix(r"\\?\").unwrap_or(p);
+        s.to_lowercase().replace("/", r"\").trim_end_matches('\\').to_owned()
+    }
+    
+    let install_path_normalized = normalize_path(&path);
+    
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(current_dir) = current_exe.parent() {
+            let current_path_normalized = normalize_path(&current_dir.to_string_lossy());
+            // Check if exact match
+            if current_path_normalized == install_path_normalized {
+                return true;
+            }
+            // Check if inside install directory (e.g. subfolder)
+            if current_path_normalized.starts_with(&install_path_normalized) {
+                return true;
+            }
+        }
+    }
+    
+    false
+}
+
 pub fn get_reg(name: &str) -> String {
     let (subkey, _, _, _) = get_install_info();
     get_reg_of(&subkey, name)
