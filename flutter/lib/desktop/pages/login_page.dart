@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_hbb/common.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -83,6 +84,20 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.close, color: Colors.grey),
+            onPressed: () async {
+              await windowManager.close();
+            },
+          ),
+          SizedBox(width: 8),
+        ],
+      ),
       body: Center(
         child: Container(
           width: 400,
@@ -105,7 +120,7 @@ class _LoginPageState extends State<LoginPage> {
               Icon(Icons.security, size: 64, color: Colors.blue),
               SizedBox(height: 20),
               Text(
-                "企业远程监控管理系统",
+                "管理系统",
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
