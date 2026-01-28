@@ -1556,6 +1556,13 @@ Future<void> initGlobalFFI() async {
   debugPrint("_globalFFI init end");
   // after `put`, can also be globally found by Get.find<FFI>();
   Get.put<FFI>(_globalFFI, permanent: true);
+  
+  // Register stop-service RxBool for settings page
+  // This is required by desktop_setting_page.dart and connection_page.dart
+  if (!Get.isRegistered<RxBool>(tag: 'stop-service')) {
+    final stopped = mainGetBoolOptionSync(kOptionStopService);
+    Get.put<RxBool>(stopped.obs, tag: 'stop-service', permanent: true);
+  }
 }
 
 String translate(String name) {
