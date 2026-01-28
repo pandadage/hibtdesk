@@ -43,7 +43,36 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     if (!mounted) return;
     
     try {
-      final response = await http.get(Uri.parse('$apiServer/employee/list'));
+      // 如果没有 token，先登录获取
+      if (token == null) {
+        final loginRes = await http.post(
+          Uri.parse('$apiServer/admin/login'),
+          body: json.encode({'username': 'admin', 'password': 'admin123'}),
+          headers: {'Content-Type': 'application/json'},
+        );
+        if (loginRes.statusCode == 200) {
+          final loginData = json.decode(loginRes.body);
+          if (loginData['success']) {
+            token = loginData['token'];
+          }
+        }
+      }
+      
+      if (token == null) {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+            errorMessage = '管理员登录失败';
+          });
+        }
+        return;
+      }
+      
+      final response = await http.get(
+        Uri.parse('$apiServer/employee/list'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success']) {
@@ -58,9 +87,18 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           if (mounted) {
             setState(() {
               isLoading = false;
-              errorMessage = data['error'] ?? '获取员工列表失败';
+              errorMessage = data['message'] ?? '获取员工列表失败';
             });
           }
+        }
+      } else if (response.statusCode == 401) {
+        // Token 过期，清除并重试
+        token = null;
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+            errorMessage = 'Token已过期，请刷新';
+          });
         }
       } else {
         if (mounted) {
