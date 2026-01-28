@@ -51,6 +51,7 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       token = prefs.getString('admin_token');
+      final List<String> pinnedIds = prefs.getStringList('monitor_pinned_ids') ?? [];
       
       Map<String, String> headers = {};
       if (token != null) {
@@ -67,7 +68,16 @@ class _MonitorGridPageState extends State<MonitorGridPage> {
         if (data['success']) {
           if (mounted) {
             setState(() {
-              onlineEmployees = data['employees'];
+              List<dynamic> allOnline = data['employees'];
+              // 如果没有收藏任何员工，则显示所有在线的（默认模式）
+              // 如果有收藏，则只显示收藏且在线的
+              if (pinnedIds.isEmpty) {
+                onlineEmployees = allOnline;
+              } else {
+                onlineEmployees = allOnline.where((emp) {
+                  return pinnedIds.contains(emp['employee_id'].toString());
+                }).toList();
+              }
             });
           }
         }

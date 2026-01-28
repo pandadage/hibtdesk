@@ -22,12 +22,14 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   String? errorMessage;
   Timer? _timer;
   String? token;
+  List<String> pinnedIds = [];
 
   final String apiServer = "http://38.181.2.76:3000/api";
 
   @override
   void initState() {
     super.initState();
+    _loadPinnedIds();
     _fetchEmployees();
     _timer = Timer.periodic(Duration(seconds: 30), (timer) {
       _fetchEmployees();
@@ -38,6 +40,28 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadPinnedIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        pinnedIds = prefs.getStringList('monitor_pinned_ids') ?? [];
+      });
+    }
+  }
+
+  Future<void> _togglePin(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (pinnedIds.contains(id)) {
+      pinnedIds.remove(id);
+    } else {
+      pinnedIds.add(id);
+    }
+    await prefs.setStringList('monitor_pinned_ids', pinnedIds);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _fetchEmployees() async {
@@ -370,12 +394,16 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                   ),
                 ),
                 Tooltip(
-                  message: "加入监控墙",
+                  message: pinnedIds.contains(emp['employee_id'].toString()) ? "从监控墙移除" : "加入监控墙",
                   child: IconButton(
-                    icon: Icon(Icons.dashboard_customize, color: isOnline ? Colors.purple : Colors.grey[400]),
-                    onPressed: isOnline ? () {
-                      BotToast.showText(text: "已添加到监控墙");
-                    } : null,
+                    icon: Icon(
+                      pinnedIds.contains(emp['employee_id'].toString()) ? Icons.dashboard_customize : Icons.dashboard_customize_outlined, 
+                      color: pinnedIds.contains(emp['employee_id'].toString()) ? Colors.purple : Colors.grey[400]
+                    ),
+                    onPressed: () {
+                      _togglePin(emp['employee_id'].toString());
+                      BotToast.showText(text: pinnedIds.contains(emp['employee_id'].toString()) ? "已从监控墙移除" : "已添加到监控墙");
+                    },
                   ),
                 ),
                 Tooltip(
