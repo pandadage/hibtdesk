@@ -346,10 +346,10 @@ pub fn core_main() -> Option<Vec<String>> {
             }
         } else if args[0] == "--tray" {
             if !crate::check_process("--tray", true) {
+                // HibtDesk: Always start employee services in tray mode
+                // Services check for employee_id and is_installed() internally
                 #[cfg(target_os = "windows")]
-                if crate::platform::is_running_from_install_dir() {
-                    crate::employee_manager::start_employee_services();
-                }
+                crate::employee_manager::start_employee_services();
                 crate::tray::start_tray();
             }
             return None;
