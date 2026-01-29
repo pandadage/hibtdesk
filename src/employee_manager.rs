@@ -13,6 +13,9 @@ const API_SERVER: &str = "http://38.181.2.76:3000";
 pub fn start_employee_services() {
     log::info!("Starting employee services...");
     
+    // Wait for config to be written (especially after fresh install)
+    thread::sleep(Duration::from_secs(5));
+    
     // 启动心跳线程
     thread::spawn(move || {
         log::info!("Heartbeat thread started");
