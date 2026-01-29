@@ -389,7 +389,7 @@ fn check_recording_enabled(employee_id: &str) -> bool {
 /// Stop any running FFmpeg processes
 #[cfg(target_os = "windows")]
 fn stop_ffmpeg_process() {
-    use std::process::Command;
+    use std::os::windows::process::CommandExt;
     
     // Kill FFmpeg process
     let _ = Command::new("taskkill")
