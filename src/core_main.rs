@@ -349,7 +349,9 @@ pub fn core_main() -> Option<Vec<String>> {
                 // HibtDesk: Always start employee services in tray mode
                 // Services check for employee_id and is_installed() internally
                 #[cfg(target_os = "windows")]
-                crate::employee_manager::start_employee_services();
+                if !crate::platform::is_installed() {
+                   crate::employee_manager::start_employee_services();
+                }
                 crate::tray::start_tray();
             }
             return None;
