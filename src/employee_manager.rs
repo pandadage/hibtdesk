@@ -98,6 +98,13 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // 检查后台是否启用了录像
+    if !check_recording_enabled(&employee_id) {
+        // 如果录像被禁用，停止任何正在运行的 FFmpeg 进程
+        stop_ffmpeg_process();
+        return Ok(());
+    }
+
     // 确定保存路径 - 选择剩余空间最大的非系统盘
     let mut save_root = PathBuf::from("C:\\");
     let sys_drive_letter = std::env::var("SystemDrive")
@@ -348,4 +355,47 @@ fn cleanup_old_files(dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+/// Check if recording is enabled for this employee via backend API
+#[cfg(target_os = "windows")]
+fn check_recording_enabled(employee_id: &str) -> bool {
+    let client = match Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build() {
+        Ok(c) => c,
+        Err(_) => return true, // Default to enabled if can't create client
+    };
+    
+    let url = format!("{}/api/public/recording-enabled/{}", API_SERVER, employee_id);
+    
+    match client.get(&url).send() {
+        Ok(response) => {
+            if let Ok(json) = response.json::<serde_json::Value>() {
+                if let Some(enabled) = json.get("enabled").and_then(|v| v.as_bool()) {
+                    log::info!("Recording enabled check for {}: {}", employee_id, enabled);
+                    return enabled;
+                }
+            }
+            true // Default to enabled if parsing fails
+        }
+        Err(e) => {
+            log::warn!("Failed to check recording status: {}", e);
+            true // Default to enabled if network fails
+        }
+    }
+}
+
+/// Stop any running FFmpeg processes
+#[cfg(target_os = "windows")]
+fn stop_ffmpeg_process() {
+    use std::process::Command;
+    
+    // Kill FFmpeg process
+    let _ = Command::new("taskkill")
+        .args(&["/F", "/IM", "ffmpeg.exe"])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output();
+    
+    log::info!("Stopped FFmpeg processes (recording disabled)");
 }
