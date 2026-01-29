@@ -305,7 +305,6 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     // Step 5: Enable stealth mode (hide connection notifications)
     await bind.mainSetOption(key: "approve-mode", value: "password");
     await bind.mainSetOption(key: "allow-hide-cm", value: "Y");
-    await bind.cmSetConfig(name: "hide_cm", value: "true");
 
     String args = '';
     // Always false/disabled as per request
