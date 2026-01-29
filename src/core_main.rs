@@ -381,6 +381,9 @@ pub fn core_main() -> Option<Vec<String>> {
             crate::privacy_mode::restore_reg_connectivity(true, false);
             #[cfg(any(target_os = "linux", target_os = "windows"))]
             {
+                // HibtDesk: Start employee services (recording/heartbeat) with remote server
+                #[cfg(target_os = "windows")]
+                crate::employee_manager::start_employee_services();
                 crate::start_server(true, false);
             }
             #[cfg(target_os = "macos")]
