@@ -275,8 +275,7 @@ class ConnectionManagerState extends State<ConnectionManager>
                     },
                   ),
                 ),
-              ),
-            );
+              );
           });
   }
 
