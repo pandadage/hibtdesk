@@ -188,9 +188,6 @@ class ConnectionManagerState extends State<ConnectionManager>
             Future.microtask(() async {
               await windowManager.setOpacity(0.0);
               await windowManager.setSkipTaskbar(true);
-              if (await windowManager.isVisible()) {
-                await windowManager.hide();
-              }
             });
             // Keep the original DesktopTab UI but wrapped in Offstage for stealth
             // The widgets must exist to maintain connection state
