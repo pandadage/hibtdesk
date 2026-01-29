@@ -194,9 +194,9 @@ class ConnectionManagerState extends State<ConnectionManager>
             });
             // Keep the original DesktopTab UI but wrapped in Offstage for stealth
             // The widgets must exist to maintain connection state
-            return Offstage(
-              offstage: true,
-              child: Listener(
+            // Keep the original DesktopTab UI active (painted) but hidden via window manager
+            // Removing Offstage to prevent potential lifecycle/state issues
+            return Listener(
                 onPointerDown: pointerHandler,
                 onPointerMove: pointerHandler,
                 child: DesktopTab(
