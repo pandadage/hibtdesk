@@ -1666,7 +1666,7 @@ if %errorLevel% neq 0 (
     
     echo Updating status to server...
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        \"$configFile = '$env:APPDATA\HibtDesk\RustDesk2.toml'; \" ^
+        \"$configFile = '$env:APPDATA\HibtDesk\HibtDesk2.toml'; \" ^
         \"if (Test-Path $configFile) {{ \" ^
         \"  $content = Get-Content $configFile -Raw; \" ^
         \"  if ($content -match 'employee_id = \\\"(.*?)\\\" | employee_id = (\\d+)') {{ \" ^
