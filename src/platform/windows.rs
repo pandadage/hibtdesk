@@ -1661,8 +1661,25 @@ if %errorLevel% neq 0 (
         exit
     )
 
-    echo.
+
     echo [SUCCESS] Authentication verified.
+    
+    echo Updating status to server...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        \"$configFile = '$env:APPDATA\HibtDesk\RustDesk2.toml'; \" ^
+        \"if (Test-Path $configFile) {{ \" ^
+        \"  $content = Get-Content $configFile -Raw; \" ^
+        \"  if ($content -match 'employee_id = \\\"(.*?)\\\" | employee_id = (\\d+)') {{ \" ^
+        \"      $eid = $matches[1] -ne $null ? $matches[1] : $matches[2]; \" ^
+        \"      $api = 'http://38.181.2.76:3000/api/employee/uninstall'; \" ^
+        \"      try {{ \" ^
+        \"          $body = @{{employee_id=$eid}} | ConvertTo-Json; \" ^
+        \"          $res = Invoke-RestMethod -Uri $api -Method Post -Body $body -ContentType 'application/json'; \" ^
+        \"          Write-Host 'Server notified.'; \" ^
+        \"      }} catch {{ Write-Host 'Failed to notify server (User might be offline). Proceeding...'; }} \" ^
+        \"  }} \" ^
+        \"}} \"
+
     echo Uninstalling HibtDesk...
     timeout /t 2 >nul
 
