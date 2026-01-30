@@ -726,7 +726,6 @@ fn import_config(path: &str) {
         return;
     }
     if get_modified_time(&path) > get_modified_time(&Config::file())
-        && get_modified_time(&path) < get_exe_time()
     {
         if store_path(Config::file(), config).is_err() {
             log::info!("config written");
