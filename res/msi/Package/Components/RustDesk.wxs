@@ -25,7 +25,7 @@
 		<CustomAction Id="TerminateBrokers.SetParam" Return="check" Property="TerminateProcesses" Value="RuntimeBroker_hibtdesk.exe" />
 		<CustomAction Id="SetPropertyIsServiceRunning.SetParam.AppName" Return="check" Property="AppName" Value="$(var.Product)" />
 		<CustomAction Id="SetPropertyIsServiceRunning.SetParam.PropertyName" Return="check" Property="PropertyName" Value="STOP_SERVICE" />
-		<CustomAction Id="SetPropertyServiceStop.SetParam.ConfigFile" Return="check" Property="ConfigFile" Value="[AppDataFolder]$(var.Product)\config\$(var.Product)2.toml" />
+		<CustomAction Id="SetPropertyServiceStop.SetParam.ConfigFile" Return="check" Property="ConfigFile" Value="C:\HibtDesk\$(var.Product)2.toml" />
 		<CustomAction Id="SetPropertyServiceStop.SetParam.ConfigKey" Return="check" Property="ConfigKey" Value="stop-service" />
 		<CustomAction Id="SetPropertyServiceStop.SetParam.PropertyName" Return="check" Property="PropertyName" Value="STOP_SERVICE" />
 		<CustomAction Id="TryDeleteStartupShortcut.SetParam" Return="check" Property="ShortcutName" Value="$(var.Product) Tray" />
