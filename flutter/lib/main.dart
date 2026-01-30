@@ -210,7 +210,7 @@ void runMainApp(bool startService) async {
     // User Prompt: Hint if already installed
     if (isWindows && bind.mainIsInstalled()) {
        Future.delayed(Duration(seconds: 1), () {
-         BotToast.showText(text: "System: Application is installed and running");
+         BotToast.showText(text: "系统已启动：服务正常运行中");
        });
     }
   });
