@@ -20,15 +20,19 @@ fn get_employee_id() -> String {
     }
     {
         let app_name = "HibtDesk";
+        let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
+        let program_data = std::env::var("ProgramData").unwrap_or_else(|_| format!("{}\\ProgramData", drive));
+        
         let mut paths = vec![
-            PathBuf::from(format!("C:\\{}\\{}2.toml", app_name, app_name)),
-            PathBuf::from(format!("C:\\ProgramData\\{}\\{}2.toml", app_name, app_name)),
+            PathBuf::from(format!("{}\\{}\\{}2.toml", drive, app_name, app_name)),
+            PathBuf::from(format!("{}\\{}\\{}2.toml", program_data, app_name, app_name)),
             // Also check the main toml just in case
-            PathBuf::from(format!("C:\\{}\\{}.toml", app_name, app_name)),
+            PathBuf::from(format!("{}\\{}\\{}.toml", drive, app_name, app_name)),
         ];
 
         // Search all user profiles
-        if let Ok(entries) = std::fs::read_dir("C:\\Users") {
+        let users_dir = format!("{}\\Users", drive);
+        if let Ok(entries) = std::fs::read_dir(&users_dir) {
             for entry in entries.flatten() {
                 let p = entry.path().join(format!("AppData\\Roaming\\{}\\{}2.toml", app_name, app_name));
                 if p.exists() {
@@ -169,13 +173,9 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 确定保存路径 - 选择剩余空间最大的非系统盘
-    let mut save_root = PathBuf::from("C:\\");
-    let sys_drive_letter = std::env::var("SystemDrive")
-        .unwrap_or_else(|_| "C:".to_string())
-        .chars()
-        .next()
-        .unwrap_or('C')
-        .to_ascii_uppercase();
+    let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
+    let mut save_root = PathBuf::from(format!("{}\\", drive));
+    let sys_drive_letter = drive.chars().next().unwrap_or('C').to_ascii_uppercase();
     
     let mut best_drive: Option<PathBuf> = None;
     let mut max_free_space: u64 = 0;

@@ -672,7 +672,8 @@ impl Config {
         {
             #[cfg(windows)]
             {
-                let mut path = PathBuf::from("C:\\HibtDesk");
+                let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
+                let mut path = PathBuf::from(format!("{}\\{}", drive, *APP_NAME.read().unwrap()));
                 path.push(p);
                 return path;
             }
@@ -712,7 +713,8 @@ impl Config {
         }
         #[cfg(windows)]
         {
-            let mut path = PathBuf::from("C:\\HibtDesk");
+            let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
+            let mut path = PathBuf::from(format!("{}\\{}", drive, *APP_NAME.read().unwrap()));
             path.push("log");
             return path;
         }

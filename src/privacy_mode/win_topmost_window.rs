@@ -28,7 +28,10 @@ use winapi::{
 
 pub(super) const PRIVACY_MODE_IMPL: &str = "privacy_mode_impl_mag";
 
-pub const ORIGIN_PROCESS_EXE: &'static str = "C:\\Windows\\System32\\RuntimeBroker.exe";
+pub fn get_origin_process_exe() -> String {
+    let root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+    format!("{}\\System32\\RuntimeBroker.exe", root)
+}
 pub const WIN_TOPMOST_INJECTED_PROCESS_EXE: &'static str = "RuntimeBroker_hibtdesk.exe";
 pub const INJECTED_PROCESS_EXE: &'static str = WIN_TOPMOST_INJECTED_PROCESS_EXE;
 pub(super) const PRIVACY_WINDOW_NAME: &'static str = "RustDeskPrivacyWindow";

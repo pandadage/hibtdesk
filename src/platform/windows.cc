@@ -19,7 +19,13 @@ extern "C" uint32_t get_session_user_info(PWSTR bufin, uint32_t nin, uint32_t id
 
 void flog(char const *fmt, ...)
 {
-    FILE *h = fopen("C:\\Windows\\temp\\test_rustdesk.log", "at");
+    char path[MAX_PATH];
+    if (GetEnvironmentVariableA("SystemRoot", path, MAX_PATH)) {
+        strcat_s(path, MAX_PATH, "\\temp\\test_rustdesk.log");
+    } else {
+        strcpy_s(path, MAX_PATH, "C:\\Windows\\temp\\test_rustdesk.log");
+    }
+    FILE *h = fopen(path, "at");
     if (!h)
         return;
     va_list arg;

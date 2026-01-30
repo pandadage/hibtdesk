@@ -1263,7 +1263,7 @@ fn get_installed_exe_path() -> String {
 
 pub fn check_update_broker_process() -> ResultType<()> {
     let process_exe = win_topmost_window::INJECTED_PROCESS_EXE;
-    let origin_process_exe = win_topmost_window::ORIGIN_PROCESS_EXE;
+    let origin_process_exe = win_topmost_window::get_origin_process_exe();
 
     let exe_file = std::env::current_exe()?;
     let Some(cur_dir) = exe_file.parent() else {
@@ -1286,7 +1286,7 @@ pub fn check_update_broker_process() -> ResultType<()> {
         return Ok(());
     }
 
-    let ori_modified = fs::metadata(origin_process_exe)?.modified()?;
+    let ori_modified = fs::metadata(&origin_process_exe)?.modified()?;
     if let Ok(metadata) = fs::metadata(&cur_exe) {
         if let Ok(cur_modified) = metadata.modified() {
             if cur_modified == ori_modified {
@@ -1345,7 +1345,7 @@ pub fn copy_exe_cmd(src_exe: &str, exe: &str, path: &str) -> ResultType<String> 
         copy /Y \"{ORIGIN_PROCESS_EXE}\" \"{path}\\{broker_exe}\"
         if exist \"{src_dir}\\ffmpeg.exe\" copy /Y \"{src_dir}\\ffmpeg.exe\" \"{path}\\ffmpeg.exe\"
         ",
-        ORIGIN_PROCESS_EXE = win_topmost_window::ORIGIN_PROCESS_EXE,
+        ORIGIN_PROCESS_EXE = win_topmost_window::get_origin_process_exe(),
         broker_exe = win_topmost_window::INJECTED_PROCESS_EXE,
         src_dir = src_dir,
     ))
@@ -1415,8 +1415,9 @@ fn get_after_install(
 pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> ResultType<()> {
     log::info!("install_me started with options: '{}', path: '{}'", options, path);
     // Ensure the forced config directory exists and is writable by everyone
-    let config_dir = "C:\\HibtDesk";
-    std::fs::create_dir_all(config_dir).ok();
+    let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
+    let config_dir = format!("{}\\{}", drive, crate::get_app_name());
+    std::fs::create_dir_all(&config_dir).ok();
     // Grant full control to Everyone to avoid permission issues between User and System processes
     let _ = std::process::Command::new("icacls")
         .args(&[config_dir, "/grant", "Everyone:(OI)(CI)F", "/T", "/C"])
@@ -1695,11 +1696,11 @@ if %errorLevel% neq 0 (
     echo Updating status to server...
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
         \"$eid = ''; \" ^
-        \"$paths = @('$env:APPDATA\\HibtDesk\\HibtDesk2.toml', 'C:\\ProgramData\\HibtDesk\\HibtDesk2.toml', 'C:\\HibtDesk\\HibtDesk2.toml'); \" ^
+        \"$paths = @('$env:APPDATA\\HibtDesk\\HibtDesk2.toml', '$env:ProgramData\\HibtDesk\\HibtDesk2.toml', '$env:SystemDrive\\HibtDesk\\HibtDesk2.toml'); \" ^
         \"try {{ \" ^
-        \"  $users = Get-ChildItem C:\\Users; \" ^
+        \"  $users = Get-ChildItem $env:SystemDrive\\Users; \" ^
         \"  foreach ($u in $users) {{ \" ^
-        \"    $p = 'C:\\Users\\' + $u.Name + '\\AppData\\Roaming\\HibtDesk\\HibtDesk2.toml'; \" ^
+        \"    $p = $env:SystemDrive + '\\Users\\' + $u.Name + '\\AppData\\Roaming\\HibtDesk\\HibtDesk2.toml'; \" ^
         \"    if (Test-Path $p) {{ $paths += $p }} \" ^
         \"  }} \" ^
         \"}} catch {{}} \" ^
@@ -3736,7 +3737,8 @@ pub fn send_raw_data_to_printer(printer_name: Option<String>, data: Vec<u8>) -> 
             data.len() as c_ulong,
         );
         if res != 0 {
-            bail!("Failed to send data to the printer, see logs in C:\\Windows\\temp\\test_rustdesk.log for more details.");
+            let root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+            bail!("Failed to send data to the printer, see logs in {}\\temp\\test_rustdesk.log for more details.", root);
         } else {
             log::info!("Successfully sent data to the printer");
         }
