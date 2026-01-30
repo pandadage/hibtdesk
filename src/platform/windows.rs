@@ -3145,7 +3145,7 @@ sc start {app_name}
     }
 }
 
-}
+
 
 fn import_config_save_check() -> ResultType<()> {
     // Config::store() happens automatically on set_option, but this ensures it's flushed
