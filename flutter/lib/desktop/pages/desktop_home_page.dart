@@ -67,11 +67,6 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
                 label: Text('员工列表'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('监控墙'),
-              ),
-              NavigationRailDestination(
                 icon: Icon(Icons.account_circle_outlined),
                 selectedIcon: Icon(Icons.account_circle),
                 label: Text('我的'),
@@ -102,8 +97,6 @@ class _DesktopHomePageState extends State<DesktopHomePage> {
       case 0:
         return const EmployeeListPage();
       case 1:
-        return const MonitorGridPage();
-      case 2:
         return AdminProfilePage(onLogout: _handleLogout);
       default:
         return const Center(child: Text("Unknown Page"));
