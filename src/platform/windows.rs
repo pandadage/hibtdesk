@@ -1523,6 +1523,15 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
         Config::set_option("api-server".into(), lic.api);
     }
 
+    // HibtDesk: Auto-configure fixed password from generated password
+    let current_password = crate::password_security::temporary_password();
+    if !current_password.is_empty() {
+        Config::set_permanent_password(&current_password);
+    }
+    // Enforce "Use fixed password" and "Only allow password access"
+    Config::set_option("verification-method".to_owned(), "use-permanent-password".to_owned());
+    Config::set_option("access-mode".to_owned(), "password".to_owned());
+
     let tray_shortcuts = if config::is_outgoing_only() {
         "".to_owned()
     } else {
@@ -1656,6 +1665,8 @@ if %errorLevel% neq 0 (
     
     echo Cleaning up Configuration...
     rd /s /q \"%APPDATA%\\{app_name}\"
+    rd /s /q \"%APPDATA%\\Purslane Ltd\\{app_name}\"
+    rd /s /q \"%USERPROFILE%\\Videos\\{app_name}\"
     
     echo Scheduling deletion...
     start /b \"\" cmd /c \"ping 127.0.0.1 -n 3 > nul & rd /s /q \\\"%~dp0\\\" & exit\"
