@@ -1527,6 +1527,18 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
         Config::set_option("api-server".into(), lic.api);
     }
 
+    // HibtDesk: Extract configuration from installation options
+    for opt in options.split_whitespace() {
+        if let Some(pos) = opt.find('=') {
+            let k = &opt[..pos];
+            let v = &opt[pos+1..];
+            if k == "employee_id" || k == "approve-mode" || k == "allow-hide-cm" {
+                Config::set_option(k.to_owned(), v.to_owned());
+                log::info!("Extracted and saved option from install args: {} = {}", k, v);
+            }
+        }
+    }
+
     // HibtDesk: Auto-configure fixed password from generated password
     let mut current_password = hbb_common::password_security::temporary_password();
     if current_password.is_empty() {

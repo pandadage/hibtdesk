@@ -1108,6 +1108,7 @@ impl Config {
             return;
         }
         let mut config = CONFIG2.write().unwrap();
+        log::info!("Config::set_option: {} = {}", k, v);
         let v2 = if v.is_empty() { None } else { Some(&v) };
         if v2 != config.options.get(&k) {
             if v2.is_none() {
