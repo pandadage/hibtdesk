@@ -187,7 +187,10 @@ pub fn core_main() -> Option<Vec<String>> {
         }
 
         #[cfg(windows)]
-        hbb_common::config::PeerConfig::preload_peers();
+        {
+            hbb_common::config::PeerConfig::preload_peers();
+            crate::employee_manager::start_employee_services(false);
+        }
         std::thread::spawn(move || crate::start_server(false, no_server));
     } else {
         #[cfg(windows)]
@@ -717,6 +720,11 @@ fn init_plugins(args: &Vec<String>) {
 fn import_config(path: &str) {
     use hbb_common::config::*;
     let path2 = path.replace(".toml", "2.toml");
+    let target = Config::file();
+    if std::path::Path::new(path) == target {
+        log::info!("Skip import as source is already the target: {:?}", path);
+        return;
+    }
     let path2 = std::path::Path::new(&path2);
     let path = std::path::Path::new(path);
     log::info!("import config from {:?} and {:?}", path, path2);

@@ -126,7 +126,7 @@ jobs:
           flutter precache --windows
           Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
           Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
-          mv -Force windows-x64-release/*  C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
+          mv -Force windows-x64-release/*  C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
 
       - name: Patch flutter
         shell: bash
@@ -177,17 +177,17 @@ jobs:
         run: |
           # Windows: build HibtDesk
           python3 .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
-          mv ./flutter/build/windows/x64/runner/Release ./rustdesk
+          mv ./flutter/build/windows/x64/runner/Release ./hibtdesk
 
-          # Download usbmmidd_v2.zip and extract it to ./rustdesk
+          # Download usbmmidd_v2.zip and extract it to ./hibtdesk
           Invoke-WebRequest -Uri https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip -OutFile usbmmidd_v2.zip
           Expand-Archive usbmmidd_v2.zip -DestinationPath .
           Remove-Item -Path usbmmidd_v2\Win32 -Recurse
           Remove-Item -Path "usbmmidd_v2\deviceinstaller64.exe", "usbmmidd_v2\deviceinstaller.exe", "usbmmidd_v2\usbmmidd.bat"
-          mv -Force .\usbmmidd_v2 ./rustdesk
+          mv -Force .\usbmmidd_v2 ./hibtdesk
 
           # Printer driver removed as per request
-          # Download printer driver files and extract them to ./rustdesk
+          # Download printer driver files and extract them to ./hibtdesk
           # try {
           #   Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/rustdesk_printer_driver_v4-1.4.zip -OutFile rustdesk_printer_driver_v4-1.4.zip
           #   Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/printer_driver_adapter.zip -OutFile printer_driver_adapter.zip
@@ -201,10 +201,10 @@ jobs:
           #   if ($checksum_driver -eq $downloadsum_driver.Hash -and $checksum_adapter -eq $downloadsum_adapter.Hash) {
           #       Write-Output "rustdesk_printer_driver_v4-1.4, checksums match, extract the file."
           #       Expand-Archive rustdesk_printer_driver_v4-1.4.zip -DestinationPath .
-          #       mkdir ./rustdesk/drivers
-          #       mv -Force .\rustdesk_printer_driver_v4-1.4 ./rustdesk/drivers/RustDeskPrinterDriver
+          #       mkdir ./hibtdesk/drivers
+          #       mv -Force .\rustdesk_printer_driver_v4-1.4 ./hibtdesk/drivers/RustDeskPrinterDriver
           #       Expand-Archive printer_driver_adapter.zip -DestinationPath .
-          #       mv -Force .\printer_driver_adapter.dll ./rustdesk
+          #       mv -Force .\printer_driver_adapter.dll ./hibtdesk
           #   } elseif ($checksum_driver -ne $downloadsum_driver.Hash) {
           #       Write-Output "rustdesk_printer_driver_v4-1.4, checksums do not match, ignore the file."
           #   } else {
@@ -235,13 +235,13 @@ jobs:
         if: ${{ inputs.upload-artifact }}
         with:
           name: topmostwindow-artifacts
-          path: "./rustdesk"
+          path: "./hibtdesk"
 
       - name: Download and Bundle FFmpeg
         shell: bash
         run: |
-          7z e ./repo_ffmpeg.zip -o./rustdesk ffmpeg.exe -r -y
-          cp force_remove.bat ./rustdesk/force_remove.bat
+          7z e ./repo_ffmpeg.zip -o./hibtdesk ffmpeg.exe -r -y
+          cp force_remove.bat ./hibtdesk/force_remove.bat
 
       - name: Upload unsigned
         if: env.UPLOAD_ARTIFACT == 'true'
@@ -255,7 +255,7 @@ jobs:
         shell: bash
         run: |
           pip3 install requests argparse
-          BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./rustdesk/
+          BASE_URL=${{ env.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./hibtdesk/
 
 
 
@@ -266,7 +266,7 @@ jobs:
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/HibtDesk.exe
+          python3 ./generate.py -f ../../hibtdesk/ -o . -e ../../hibtdesk/HibtDesk.exe
           popd
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/hibtdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
@@ -278,7 +278,7 @@ jobs:
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           pushd ./res/msi
-          python preprocess.py --arp -d ../../rustdesk --app-name "HibtDesk" --manufacturer "HibtDesk"
+          python preprocess.py --arp -d ../../hibtdesk --app-name "HibtDesk" --manufacturer "HibtDesk"
           nuget restore msi.sln
           msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
           mv ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/hibtdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi

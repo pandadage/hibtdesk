@@ -50,9 +50,12 @@ fn get_employee_id() -> String {
                         }
                     }
                 }
+            } else {
+                log::trace!("Could not read file: {:?}", path);
             }
         }
     }
+    log::warn!("employee_id not found in any configuration location");
     "".to_string()
 }
 
@@ -140,6 +143,7 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
     // 检查是否有 employee_id，如果没有意味着未安装/未配置，不应启动录像
     // 双重检查: 确保仅在安装状态下运行
     if !crate::platform::is_installed() {
+        log::debug!("Skipping manage_recording: application not installed");
         return Ok(());
     }
     
@@ -283,6 +287,7 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Check if ffmpeg.exe is currently running
+#[cfg(target_os = "windows")]
 fn is_ffmpeg_running() -> bool {
     use std::os::windows::process::CommandExt;
     let output = Command::new("tasklist")
