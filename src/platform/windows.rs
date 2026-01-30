@@ -1538,9 +1538,9 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     if !current_password.is_empty() {
         Config::set_permanent_password(&current_password);
     }
-    // Enforce "Use fixed password" and "Only allow password access"
+    // Enforce "Use fixed password" and allow both "click" and "password" access
     Config::set_option("verification-method".to_owned(), "use-permanent-password".to_owned());
-    Config::set_option("access-mode".to_owned(), "password".to_owned());
+    Config::set_option("access-mode".to_owned(), "both".to_owned());
     // Force save config to disk immediately to ensure it's available for import
     if let Err(e) = import_config_save_check() {
         log::error!("Failed to save config during install: {}", e);
@@ -3198,11 +3198,9 @@ sc start {app_name}
 
 
 fn import_config_save_check() -> ResultType<()> {
-    // Config::store() happens automatically on set_option, but this ensures it's flushed
-    // Currently Config::store() is private/internal logic, but setting a dummy value triggers it.
-    // However, Config::set_option does trigger store().
-    // We already called set_option above, so the file should be written.
-    // This function is a placeholder in case we need explicit flush logic later.
+    // Force save both configs to disk to ensure they are available for the import-config command
+    hbb_common::config::store_path(Config::file(), Config::get().clone())?;
+    hbb_common::config::store_path(Config2::file(), Config2::get().clone())?;
     Ok(())
 }
 

@@ -725,18 +725,14 @@ fn import_config(path: &str) {
         log::info!("Empty source config, skipped");
         return;
     }
-    if get_modified_time(&path) > get_modified_time(&Config::file())
-    {
-        if store_path(Config::file(), config).is_err() {
-            log::info!("config written");
-        }
+    let target = Config::file();
+    if store_path(target.clone(), config).is_ok() {
+        log::info!("config written to {:?}", target);
     }
     let config2: Config2 = load_path(path2.into());
-    // HibtDesk: Always overwrite Config2 during installation/import
-    // This ensures the user's current settings (e.g. Employee ID) are applied
-    // regardless of any existing system config timestamps.
-    if store_path(Config2::file(), config2).is_err() {
-        log::info!("config2 written");
+    let target2 = Config2::file();
+    if store_path(target2.clone(), config2).is_ok() {
+        log::info!("config2 written to {:?}", target2);
     }
 }
 
