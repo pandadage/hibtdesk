@@ -610,7 +610,7 @@ async fn run_service(_arguments: Vec<OsString>) -> ResultType<()> {
     
     // HibtDesk: Start employee services (heartbeat) in background service
     // This ensures online status even when UI is closed
-    crate::employee_manager::start_employee_services();
+    crate::employee_manager::start_employee_services(true);
 
     let mut session_id = unsafe { get_current_session(share_rdp()) };
     log::info!("session id {}", session_id);

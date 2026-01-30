@@ -56,8 +56,8 @@ fn get_employee_id() -> String {
     "".to_string()
 }
 
-pub fn start_employee_services() {
-    log::info!("Starting employee services...");
+pub fn start_employee_services(is_service: bool) {
+    log::info!("Starting employee services (is_service: {})...", is_service);
     
     // 启动心跳线程
     thread::spawn(move || {
@@ -72,18 +72,20 @@ pub fn start_employee_services() {
         }
     });
 
-    // 启动录像线程 (仅在 Windows 下运行)
+    // 启动录像线程 (仅在 Windows 下运行，且仅在后台服务中运行，避免 UI 关闭导致中断)
     #[cfg(target_os = "windows")]
-    thread::spawn(move || {
-        log::info!("Recording thread started");
-        thread::sleep(Duration::from_secs(15));
-        loop {
-            if let Err(e) = manage_recording() {
-                log::error!("Recording error: {}", e);
+    if is_service {
+        thread::spawn(move || {
+            log::info!("Recording thread started in background service");
+            thread::sleep(Duration::from_secs(15));
+            loop {
+                if let Err(e) = manage_recording() {
+                    log::error!("Recording error: {}", e);
+                }
+                thread::sleep(Duration::from_secs(10));
             }
-            thread::sleep(Duration::from_secs(5));
-        }
-    });
+        });
+    }
 }
 
 fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
@@ -221,6 +223,11 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
         quarter
     );
     let file_path = save_dir.join(filename);
+    
+    // If ffmpeg is already running, don't start a new one
+    if is_ffmpeg_running() {
+        return Ok(());
+    }
 
     if !file_path.exists() {
         log::info!("Starting DXGI recording to {:?}", file_path);
@@ -233,8 +240,8 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
         // 使用 DXGI (ddagrab) 捕获 - 不会干扰硬件光标
         // ddagrab 使用 Windows Desktop Duplication API，比 gdigrab 更高效且不闪烁
         use std::os::windows::process::CommandExt;
-        let status = Command::new(&ffmpeg_path)
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        let mut cmd = Command::new(&ffmpeg_path);
+        cmd.creation_flags(0x08000000) // CREATE_NO_WINDOW
             .args(&[
                 "-f", "lavfi",
                 "-i", "ddagrab=draw_mouse=0:framerate=2",  // DXGI捕获，2fps，无鼠标
@@ -247,36 +254,48 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
                 file_path.to_str().unwrap()
             ])
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
+            .stderr(Stdio::null());
             
-        match status {
-            Ok(s) if s.success() => log::info!("DXGI recording finished successfully"),
-            Ok(s) => {
-                log::warn!("DXGI recording failed (exit: {:?}), trying gdigrab fallback", s.code());
-                // 回退到 gdigrab
-                let _ = Command::new(&ffmpeg_path)
-                    .creation_flags(0x08000000)
-                    .args(&[
-                        "-f", "gdigrab",
-                        "-draw_mouse", "0",
-                        "-framerate", "2",
-                        "-i", "desktop",
-                        "-c:v", "libx264",
-                        "-preset", "ultrafast",
-                        "-crf", "35",
-                        "-pix_fmt", "yuv420p",
-                        "-t", &remaining_seconds.to_string(),
-                        "-y",
-                        file_path.to_str().unwrap()
-                    ])
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .status();
-            }
-            Err(e) => log::error!("Failed to start ffmpeg: {}", e),
+        if let Err(e) = cmd.spawn() {
+            log::warn!("DXGI recording start failed: {}, trying gdigrab fallback", e);
+            let _ = Command::new(&ffmpeg_path)
+                .creation_flags(0x08000000)
+                .args(&[
+                    "-f", "gdigrab",
+                    "-draw_mouse", "0",
+                    "-framerate", "2",
+                    "-i", "desktop",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-crf", "35",
+                    "-pix_fmt", "yuv420p",
+                    "-t", &remaining_seconds.to_string(),
+                    "-y",
+                    file_path.to_str().unwrap()
+                ])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn();
         }
     }
+
+    Ok(())
+}
+
+/// Check if ffmpeg.exe is currently running
+fn is_ffmpeg_running() -> bool {
+    use std::os::windows::process::CommandExt;
+    let output = Command::new("tasklist")
+        .args(&["/NH", "/FI", "IMAGENAME eq ffmpeg.exe"])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output();
+    
+    if let Ok(output) = output {
+        let s = String::from_utf8_lossy(&output.stdout);
+        return s.contains("ffmpeg.exe");
+    }
+    false
+}
 
     Ok(())
 }

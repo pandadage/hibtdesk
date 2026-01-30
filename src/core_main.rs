@@ -351,7 +351,7 @@ pub fn core_main() -> Option<Vec<String>> {
                 // HibtDesk: Always start employee services in tray mode
                 // Services check for employee_id internally
                 #[cfg(target_os = "windows")]
-                crate::employee_manager::start_employee_services();
+                crate::employee_manager::start_employee_services(false);
                 crate::tray::start_tray();
             }
             return None;
@@ -385,7 +385,7 @@ pub fn core_main() -> Option<Vec<String>> {
             {
                 // HibtDesk: Start employee services (recording/heartbeat) with remote server
                 #[cfg(target_os = "windows")]
-                crate::employee_manager::start_employee_services();
+                crate::employee_manager::start_employee_services(false);
                 crate::start_server(true, false);
             }
             #[cfg(target_os = "macos")]
