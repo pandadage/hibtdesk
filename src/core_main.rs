@@ -715,7 +715,7 @@ fn init_plugins(args: &Vec<String>) {
 }
 
 fn import_config(path: &str) {
-    use hbb_common::{config::*, get_exe_time, get_modified_time};
+    use hbb_common::config::*;
     let path2 = path.replace(".toml", "2.toml");
     let path2 = std::path::Path::new(&path2);
     let path = std::path::Path::new(path);

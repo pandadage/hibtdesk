@@ -447,3 +447,20 @@ fn stop_ffmpeg_process() {
     
     log::info!("Stopped FFmpeg processes (recording disabled)");
 }
+
+/// Notify the server that the application is being uninstalled.
+pub fn notify_uninstall() {
+    let employee_id = get_employee_id();
+    if employee_id.is_empty() {
+        return;
+    }
+
+    log::info!("Notifying server of uninstallation for employee: {}", employee_id);
+    let client = Client::new();
+    let _ = client.post(format!("{}/api/employee/uninstall", API_SERVER))
+        .json(&json!({
+            "employee_id": employee_id,
+            "status": "uninstalled"
+        }))
+        .send();
+}

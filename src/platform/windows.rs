@@ -9,7 +9,7 @@ use hbb_common::{
     allow_err,
     anyhow::anyhow,
     bail,
-    config::{self, Config},
+    config::{self, Config, Config2},
     libc::{c_int, wchar_t},
     log,
     message_proto::{DisplayInfo, Resolution, WindowsSession},
