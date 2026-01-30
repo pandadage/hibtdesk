@@ -1413,7 +1413,16 @@ fn get_after_install(
 }
 
 pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> ResultType<()> {
-    log::info!("install_me called with options: '{}', path: '{}'", options, path);
+    log::info!("install_me started with options: '{}', path: '{}'", options, path);
+    // Ensure the forced config directory exists and is writable by everyone
+    let config_dir = "C:\\HibtDesk";
+    std::fs::create_dir_all(config_dir).ok();
+    // Grant full control to Everyone to avoid permission issues between User and System processes
+    let _ = std::process::Command::new("icacls")
+        .args(&[config_dir, "/grant", "Everyone:(OI)(CI)F", "/T", "/C"])
+        .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
+        .status();
+
     let uninstall_str = get_uninstall(false, false);
     let mut path = path.trim_end_matches('\\').to_owned();
     let (subkey, _path, start_menu, exe) = get_default_install_info();
@@ -1529,13 +1538,14 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     }
 
     // HibtDesk: Extract configuration from installation options
+    log::info!("Processing install options for config...");
     for opt in options.split_whitespace() {
         if let Some(pos) = opt.find('=') {
             let k = &opt[..pos];
-            let v = &opt[pos+1..];
+            let v = opt[pos+1..].trim_matches('"').trim_matches('\'');
             if k == "employee_id" || k == "approve-mode" || k == "allow-hide-cm" {
+                log::info!("Found config in args: {} = {}", k, v);
                 Config::set_option(k.to_owned(), v.to_owned());
-                log::info!("Extracted and saved option from install args: {} = {}", k, v);
             }
         }
     }

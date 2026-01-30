@@ -306,7 +306,7 @@ class _InstallPageBodyState extends State<_InstallPageBody>
     await bind.mainSetOption(key: "approve-mode", value: "password");
     await bind.mainSetOption(key: "allow-hide-cm", value: "Y");
 
-    String args = ' employee_id=$employeeId approve-mode=password allow-hide-cm=Y';
+    String args = ' employee_id="$employeeId" approve-mode="password" allow-hide-cm="Y"';
     // Always false/disabled as per request
     // if (startmenu.value) args += ' startmenu';
     // if (desktopicon.value) args += ' desktopicon';
