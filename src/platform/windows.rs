@@ -1674,7 +1674,7 @@ if %errorLevel% neq 0 (
         \"if (Test-Path $configFile) {{ \" ^
         \"  $content = Get-Content $configFile -Raw; \" ^
         \"  if ($content -match 'employee_id = \\\"(.*?)\\\" | employee_id = (\\d+)') {{ \" ^
-        \"      $eid = $matches[1] -ne $null ? $matches[1] : $matches[2]; \" ^
+        \"      $eid = if ($matches[1]) {{ $matches[1] }} else {{ $matches[2] }}; \" ^
         \"      $api = 'http://38.181.2.76:3000/api/employee/uninstall'; \" ^
         \"      try {{ \" ^
         \"          $body = @{{employee_id=$eid}} | ConvertTo-Json; \" ^
