@@ -732,18 +732,6 @@ fn import_config(path: &str) {
     if store_path(target2.clone(), config2.clone()).is_ok() {
         log::info!("config2 written to {:?}", target2);
     }
-
-    // HibtDesk: Sync to master config directory for background service (SYSTEM)
-    if cfg!(target_os = "windows") {
-        let master_dir = std::path::Path::new("C:\\HibtDesk");
-        if master_dir.exists() {
-            let master_path = master_dir.join("HibtDesk.toml");
-            let _ = store_path(master_path, config);
-            let master_path2 = master_dir.join("HibtDesk2.toml");
-            let _ = store_path(master_path2, config2);
-            log::info!("Synced master configs to C:\\HibtDesk for background service");
-        }
-    }
 }
 
 /// invoke a new connection

@@ -667,19 +667,28 @@ impl Config {
         }
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {
-            #[cfg(not(target_os = "macos"))]
-            let org = "".to_owned();
-            #[cfg(target_os = "macos")]
-            let org = ORG.read().unwrap().clone();
-            // /var/root for root
-            if let Some(project) =
-                directories_next::ProjectDirs::from("", &org, &APP_NAME.read().unwrap())
+            #[cfg(windows)]
             {
-                let mut path = patch(project.config_dir().to_path_buf());
+                let mut path = PathBuf::from("C:\\HibtDesk");
                 path.push(p);
                 return path;
             }
-            "".into()
+            #[cfg(not(windows))]
+            {
+                #[cfg(not(target_os = "macos"))]
+                let org = "".to_owned();
+                #[cfg(target_os = "macos")]
+                let org = ORG.read().unwrap().clone();
+                // /var/root for root
+                if let Some(project) =
+                    directories_next::ProjectDirs::from("", &org, &APP_NAME.read().unwrap())
+                {
+                    let mut path = patch(project.config_dir().to_path_buf());
+                    path.push(p);
+                    return path;
+                }
+                "".into()
+            }
         }
     }
 
@@ -697,6 +706,12 @@ impl Config {
                 path.push(format!("Library/Logs/{}", *APP_NAME.read().unwrap()));
                 return path.clone();
             }
+        }
+        #[cfg(windows)]
+        {
+            let mut path = PathBuf::from("C:\\HibtDesk");
+            path.push("log");
+            return path;
         }
         #[cfg(target_os = "linux")]
         {
