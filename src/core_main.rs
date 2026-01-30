@@ -350,8 +350,6 @@ pub fn core_main() -> Option<Vec<String>> {
         } else if args[0] == "--tray" {
             if !crate::check_process("--tray", true) {
                 // HibtDesk: Always start employee services in tray mode
-                // Services check for employee_id and is_installed() internally
-                // HibtDesk: Always start employee services in tray mode
                 // Services check for employee_id internally
                 #[cfg(target_os = "windows")]
                 crate::employee_manager::start_employee_services(false);
@@ -721,6 +719,7 @@ fn import_config(path: &str) {
     use hbb_common::config::*;
     let path2 = path.replace(".toml", "2.toml");
     let target = Config::file();
+    log::info!("import_config request: source={:?}, target={:?}", path, target);
     if std::path::Path::new(path) == target {
         log::info!("Skip import as source is already the target: {:?}", path);
         return;

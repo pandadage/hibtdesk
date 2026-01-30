@@ -2447,6 +2447,9 @@ fn is_option_can_save(
     defaults: &RwLock<HashMap<String, String>>,
     v: &str,
 ) -> bool {
+    if k == "employee_id" {
+        return true;
+    }
     if overwrite.read().unwrap().contains_key(k)
         || defaults.read().unwrap().get(k).map_or(false, |x| x == v)
     {

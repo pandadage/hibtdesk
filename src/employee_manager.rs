@@ -40,21 +40,27 @@ fn get_employee_id() -> String {
         log::info!("Searching for employee_id in paths: {:?}", paths);
 
         for path in paths {
-            if let Ok(content) = std::fs::read_to_string(&path) {
-                // Simple search for employee_id = "..." or employee_id = ...
-                for line in content.lines() {
-                    if line.contains("employee_id") {
-                        if let Some(val) = line.split('=').nth(1) {
-                            let val = val.trim().trim_matches('"').trim_matches('\'');
-                            if !val.is_empty() {
-                                log::info!("SUCCESS: Found employee_id {} in file {:?}", val, path);
-                                return val.to_string();
+            if path.exists() {
+                log::info!("Checking path: {:?}", path);
+                if let Ok(content) = std::fs::read_to_string(&path) {
+                    // Simple search for employee_id = "..." or employee_id = ...
+                    for line in content.lines() {
+                        if line.contains("employee_id") {
+                            log::info!("Found line with employee_id in {:?}: {}", path, line);
+                            if let Some(val) = line.split('=').nth(1) {
+                                let val = val.trim().trim_matches('"').trim_matches('\'');
+                                if !val.is_empty() {
+                                    log::info!("SUCCESS: Found employee_id {} in file {:?}", val, path);
+                                    return val.to_string();
+                                }
                             }
                         }
                     }
+                } else {
+                    log::warn!("Could NOT read file: {:?}", path);
                 }
             } else {
-                log::trace!("Could not read file: {:?}", path);
+                log::trace!("Path does not exist: {:?}", path);
             }
         }
     }
