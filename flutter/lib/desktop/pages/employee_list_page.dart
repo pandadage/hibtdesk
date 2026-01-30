@@ -23,7 +23,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   String? errorMessage;
   Timer? _timer;
   String? token;
-  List<String> pinnedIds = [];
+
   List<String> departments = ['全部部门'];
   String selectedDepartment = '全部部门';
   String? _serverKey; // Cached server key
@@ -33,7 +33,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   @override
   void initState() {
     super.initState();
-    _loadPinnedIds();
+
     _fetchDepartments();
     _checkServerConfig();
     _fetchEmployees();
@@ -69,27 +69,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
      }
   }
 
-  Future<void> _loadPinnedIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        pinnedIds = prefs.getStringList('monitor_pinned_ids') ?? [];
-      });
-    }
-  }
 
-  Future<void> _togglePin(String id) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (pinnedIds.contains(id)) {
-      pinnedIds.remove(id);
-    } else {
-      pinnedIds.add(id);
-    }
-    await prefs.setStringList('monitor_pinned_ids', pinnedIds);
-    if (mounted) {
-      setState(() {});
-    }
-  }
 
   Future<void> _fetchDepartments() async {
     try {
