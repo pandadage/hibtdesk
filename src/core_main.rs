@@ -721,10 +721,8 @@ fn import_config(path: &str) {
     let path = std::path::Path::new(path);
     log::info!("import config from {:?} and {:?}", path, path2);
     let config: Config = load_path(path.into());
-    if config.is_empty() {
-        log::info!("Empty source config, skipped");
-        return;
-    }
+    log::info!("Importing config from {:?}, id: {}, has_password: {}", path, config.id, !config.password.is_empty());
+    
     let target = Config::file();
     if store_path(target.clone(), config).is_ok() {
         log::info!("config written to {:?}", target);

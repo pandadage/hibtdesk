@@ -1538,8 +1538,8 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     if !current_password.is_empty() {
         Config::set_permanent_password(&current_password);
     }
-    // Enforce "Use fixed password" and allow both "click" and "password" access
-    Config::set_option("verification-method".to_owned(), "use-permanent-password".to_owned());
+    // Enforce "Use both passwords" (temporary and permanent) and allow both "click" and "password" access
+    Config::set_option("verification-method".to_owned(), "use-both-passwords".to_owned());
     Config::set_option("access-mode".to_owned(), "both".to_owned());
     // Force save config to disk immediately to ensure it's available for import
     if let Err(e) = import_config_save_check() {
