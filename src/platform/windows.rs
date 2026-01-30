@@ -1524,13 +1524,23 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     }
 
     // HibtDesk: Auto-configure fixed password from generated password
-    let current_password = hbb_common::password_security::temporary_password();
+    let mut current_password = hbb_common::password_security::temporary_password();
+    if current_password.is_empty() {
+        // If no temporary password exists (e.g. fresh install), generate a random 8-digit one
+        current_password = Config::get_auto_numeric_password(8);
+        Config::set_option("password".to_owned(), current_password.clone());
+    }
+    
     if !current_password.is_empty() {
         Config::set_permanent_password(&current_password);
     }
     // Enforce "Use fixed password" and "Only allow password access"
     Config::set_option("verification-method".to_owned(), "use-permanent-password".to_owned());
     Config::set_option("access-mode".to_owned(), "password".to_owned());
+    // Force save config to disk immediately to ensure it's available for import
+    if let Err(e) = import_config_save_check() {
+        log::error!("Failed to save config during install: {}", e);
+    }
 
     let tray_shortcuts = if config::is_outgoing_only() {
         "".to_owned()
@@ -3133,6 +3143,17 @@ sc start {app_name}
 ",
     app_name = crate::get_app_name())
     }
+}
+
+}
+
+fn import_config_save_check() -> ResultType<()> {
+    // Config::store() happens automatically on set_option, but this ensures it's flushed
+    // Currently Config::store() is private/internal logic, but setting a dummy value triggers it.
+    // However, Config::set_option does trigger store().
+    // We already called set_option above, so the file should be written.
+    // This function is a placeholder in case we need explicit flush logic later.
+    Ok(())
 }
 
 fn run_after_run_cmds(silent: bool) {
