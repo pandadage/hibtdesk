@@ -496,19 +496,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                     onPressed: isOnline ? () => _connect(emp['employee_id'], isFileTransfer: true) : null,
                   ),
                 ),
-                Tooltip(
-                  message: pinnedIds.contains(emp['employee_id'].toString()) ? "从监控墙移除" : "加入监控墙",
-                  child: IconButton(
-                    icon: Icon(
-                      pinnedIds.contains(emp['employee_id'].toString()) ? Icons.dashboard_customize : Icons.dashboard_customize_outlined, 
-                      color: pinnedIds.contains(emp['employee_id'].toString()) ? Colors.purple : Colors.grey[400]
-                    ),
-                    onPressed: () {
-                      _togglePin(emp['employee_id'].toString());
-                      BotToast.showText(text: pinnedIds.contains(emp['employee_id'].toString()) ? "已从监控墙移除" : "已添加到监控墙");
-                    },
-                  ),
-                ),
+
                 Tooltip(
                   message: "查看录像",
                   child: IconButton(
