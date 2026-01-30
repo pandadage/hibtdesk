@@ -23,7 +23,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   String? errorMessage;
   Timer? _timer;
   String? token;
-
+  List<String> pinnedIds = [];
   List<String> departments = ['全部部门'];
   String selectedDepartment = '全部部门';
   String? _serverKey; // Cached server key
@@ -33,7 +33,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
   @override
   void initState() {
     super.initState();
-
+    _loadPinnedIds();
     _fetchDepartments();
     _checkServerConfig();
     _fetchEmployees();
@@ -69,7 +69,27 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
      }
   }
 
+  Future<void> _loadPinnedIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        pinnedIds = prefs.getStringList('monitor_pinned_ids') ?? [];
+      });
+    }
+  }
 
+  Future<void> _togglePin(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (pinnedIds.contains(id)) {
+      pinnedIds.remove(id);
+    } else {
+      pinnedIds.add(id);
+    }
+    await prefs.setStringList('monitor_pinned_ids', pinnedIds);
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> _fetchDepartments() async {
     try {
@@ -476,7 +496,19 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                     onPressed: isOnline ? () => _connect(emp['employee_id'], isFileTransfer: true) : null,
                   ),
                 ),
-
+                Tooltip(
+                  message: pinnedIds.contains(emp['employee_id'].toString()) ? "从监控墙移除" : "加入监控墙",
+                  child: IconButton(
+                    icon: Icon(
+                      pinnedIds.contains(emp['employee_id'].toString()) ? Icons.dashboard_customize : Icons.dashboard_customize_outlined, 
+                      color: pinnedIds.contains(emp['employee_id'].toString()) ? Colors.purple : Colors.grey[400]
+                    ),
+                    onPressed: () {
+                      _togglePin(emp['employee_id'].toString());
+                      BotToast.showText(text: pinnedIds.contains(emp['employee_id'].toString()) ? "已从监控墙移除" : "已添加到监控墙");
+                    },
+                  ),
+                ),
                 Tooltip(
                   message: "查看录像",
                   child: IconButton(
