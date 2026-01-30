@@ -1413,6 +1413,7 @@ fn get_after_install(
 }
 
 pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> ResultType<()> {
+    log::info!("install_me called with options: '{}', path: '{}'", options, path);
     let uninstall_str = get_uninstall(false, false);
     let mut path = path.trim_end_matches('\\').to_owned();
     let (subkey, _path, start_menu, exe) = get_default_install_info();
@@ -1607,6 +1608,7 @@ rem cscript \"{uninstall_shortcut}\"
 {shortcuts}
 rem copy /Y \"{tmp_path}\\Uninstall {app_name}.lnk\" \"{path}\\\"
 {dels}
+icacls \"{path}\" /grant Everyone:(OI)(CI)F /T
 {import_config}
 {after_install}
 {install_remote_printer}

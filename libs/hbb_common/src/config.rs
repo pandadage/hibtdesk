@@ -554,10 +554,13 @@ impl Config {
         cfg
     }
 
-    fn store_<T: serde::Serialize>(config: &T, suffix: &str) {
+    fn store_<T: serde::Serialize + std::fmt::Debug>(config: &T, suffix: &str) {
         let file = Self::file_(suffix);
-        if let Err(err) = store_path(file, config) {
-            log::error!("Failed to store {suffix} config: {err}");
+        log::info!("Storing {} config to {:?}", if suffix.is_empty() { "main" } else { suffix }, file);
+        if let Err(err) = store_path(file.clone(), config) {
+            log::error!("Failed to store {suffix} config to {:?}: {err}", file);
+        } else {
+            log::info!("Successfully stored {} config to {:?}", if suffix.is_empty() { "main" } else { suffix }, file);
         }
     }
 
@@ -1100,7 +1103,9 @@ impl Config {
     }
 
     pub fn set_option(k: String, v: String) {
+        log::info!("Config::set_option: REQUESTed {} = {}", k, v);
         if !is_option_can_save(&OVERWRITE_SETTINGS, &k, &DEFAULT_SETTINGS, &v) {
+            log::info!("Config::set_option: SKIPPED (cannot save or matches default/overwrite) {} = {}", k, v);
             let mut config = CONFIG2.write().unwrap();
             if config.options.remove(&k).is_some() {
                 config.store();
@@ -1108,7 +1113,7 @@ impl Config {
             return;
         }
         let mut config = CONFIG2.write().unwrap();
-        log::info!("Config::set_option: {} = {}", k, v);
+        log::info!("Config::set_option: SETting {} = {}", k, v);
         let v2 = if v.is_empty() { None } else { Some(&v) };
         if v2 != config.options.get(&k) {
             if v2.is_none() {
@@ -1117,6 +1122,8 @@ impl Config {
                 config.options.insert(k, v);
             }
             config.store();
+        } else {
+            log::info!("Config::set_option: NO-OP (already matches current value) {} = {}", k, v);
         }
     }
 

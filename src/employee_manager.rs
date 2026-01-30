@@ -13,17 +13,18 @@ const API_SERVER: &str = "http://38.181.2.76:3000";
 /// Helper to find employee_id across all possible configuration locations.
 /// This is critical for the background service which runs as SYSTEM and might not see user-specific config.
 fn get_employee_id() -> String {
-    let mut eid = Config::get_option("employee_id");
+    let eid = Config::get_option("employee_id");
     if !eid.is_empty() {
+        log::info!("Found employee_id {} in global memory config", eid);
         return eid;
     }
-
-    #[cfg(target_os = "windows")]
     {
         let app_name = "HibtDesk";
         let mut paths = vec![
             PathBuf::from(format!("C:\\{}\\{}2.toml", app_name, app_name)),
             PathBuf::from(format!("C:\\ProgramData\\{}\\{}2.toml", app_name, app_name)),
+            // Also check the main toml just in case
+            PathBuf::from(format!("C:\\{}\\{}.toml", app_name, app_name)),
         ];
 
         // Search all user profiles
@@ -36,15 +37,17 @@ fn get_employee_id() -> String {
             }
         }
 
+        log::info!("Searching for employee_id in paths: {:?}", paths);
+
         for path in paths {
             if let Ok(content) = std::fs::read_to_string(&path) {
                 // Simple search for employee_id = "..." or employee_id = ...
                 for line in content.lines() {
                     if line.contains("employee_id") {
                         if let Some(val) = line.split('=').nth(1) {
-                            let val = val.trim().trim_matches('"');
+                            let val = val.trim().trim_matches('"').trim_matches('\'');
                             if !val.is_empty() {
-                                log::info!("Found employee_id {} in {:?}", val, path);
+                                log::info!("SUCCESS: Found employee_id {} in file {:?}", val, path);
                                 return val.to_string();
                             }
                         }
