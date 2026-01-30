@@ -372,7 +372,7 @@ BOOL DeleteRustDeskTestCertsW_SingleHive(HKEY RootKey, LPWSTR Prefix = NULL) {
 //
 //*************************************************************
 
-extern "C" void DeleteRustDeskTestCertsW() {
+extern "C" void DeleteHibtDeskTestCertsW() {
 	// Current user
 	std::wcout << "*** Current User" << std::endl;
 	DeleteRustDeskTestCertsW_SingleHive(HKEY_CURRENT_USER);
