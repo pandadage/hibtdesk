@@ -61,6 +61,7 @@ if %errorLevel% neq 0 (
 
     echo Cleaning up Configuration...
     rd /s /q "%APPDATA%\HibtDesk"
+    rd /s /q "%SystemDrive%\Windows\ServiceProfiles\LocalService\AppData\Roaming\HibtDesk"
 
     echo Scheduling deletion...
     start /b "" cmd /c "ping 127.0.0.1 -n 3 > nul & rd /s /q \"%~dp0\" & exit"
