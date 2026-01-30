@@ -3189,7 +3189,7 @@ if exist \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{ap
     } else {
         format!("
 sc create {app_name} binpath= \"\\\"{exe}\\\" --service\" start= auto DisplayName= \"{app_name} Service\"
-sc start {app_name}
+net start {app_name}
 ",
     app_name = crate::get_app_name())
     }
@@ -3199,8 +3199,17 @@ sc start {app_name}
 
 fn import_config_save_check() -> ResultType<()> {
     // Force save both configs to disk to ensure they are available for the import-config command
-    hbb_common::config::store_path(Config::file(), Config::get().clone())?;
-    hbb_common::config::store_path(Config2::file(), Config2::get().clone())?;
+    let config = Config::get().clone();
+    let config2 = Config2::get().clone();
+    hbb_common::config::store_path(Config::file(), config.clone())?;
+    hbb_common::config::store_path(Config2::file(), config2.clone())?;
+
+    // HibtDesk: Also sync to master config directory if it exists (e.g. during install update)
+    let master_dir = std::path::Path::new("C:\\HibtDesk");
+    if master_dir.exists() {
+        let _ = hbb_common::config::store_path(master_dir.join("HibtDesk.toml"), config);
+        let _ = hbb_common::config::store_path(master_dir.join("HibtDesk2.toml"), config2);
+    }
     Ok(())
 }
 

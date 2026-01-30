@@ -22,8 +22,8 @@ fn get_employee_id() -> String {
     {
         let app_name = "HibtDesk";
         let mut paths = vec![
-            PathBuf::from(format!("C:\\ProgramData\\{}\\{}2.toml", app_name, app_name)),
             PathBuf::from(format!("C:\\{}\\{}2.toml", app_name, app_name)),
+            PathBuf::from(format!("C:\\ProgramData\\{}\\{}2.toml", app_name, app_name)),
         ];
 
         // Search all user profiles
