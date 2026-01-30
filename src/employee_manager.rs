@@ -297,8 +297,7 @@ fn is_ffmpeg_running() -> bool {
     false
 }
 
-    Ok(())
-}
+
 
 #[cfg(target_os = "windows")]
 fn ensure_ffmpeg() -> Result<PathBuf, Box<dyn std::error::Error>> {
