@@ -1524,7 +1524,7 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     }
 
     // HibtDesk: Auto-configure fixed password from generated password
-    let current_password = crate::password_security::temporary_password();
+    let current_password = crate::hbb_common::password_security::temporary_password();
     if !current_password.is_empty() {
         Config::set_permanent_password(&current_password);
     }

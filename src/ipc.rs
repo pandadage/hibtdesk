@@ -684,7 +684,7 @@ async fn handle(data: Data, stream: &mut Connection) {
                 } else if name == "unlock-pin" {
                     Config::set_unlock_pin(&value);
                 } else if name == "employee_id" {
-                    Config::set_option("employee_id", &value);
+                    Config::set_option("employee_id".to_owned(), value);
                 } else {
                     return;
                 }
