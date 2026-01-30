@@ -1670,19 +1670,32 @@ if %errorLevel% neq 0 (
     
     echo Updating status to server...
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        \"$configFile = '$env:APPDATA\\HibtDesk\\HibtDesk2.toml'; \" ^
-        \"if (Test-Path $configFile) {{ \" ^
-        \"  $content = Get-Content $configFile -Raw; \" ^
-        \"  if ($content -match 'employee_id = \\\"(.*?)\\\" | employee_id = (\\d+)') {{ \" ^
-        \"      $eid = if ($matches[1]) {{ $matches[1] }} else {{ $matches[2] }}; \" ^
-        \"      $api = 'http://38.181.2.76:3000/api/employee/uninstall'; \" ^
-        \"      try {{ \" ^
-        \"          $body = @{{employee_id=$eid}} | ConvertTo-Json; \" ^
-        \"          $res = Invoke-RestMethod -Uri $api -Method Post -Body $body -ContentType 'application/json'; \" ^
-        \"          Write-Host 'Server notified.'; \" ^
-        \"      }} catch {{ Write-Host 'Failed to notify server (User might be offline). Proceeding...'; }} \" ^
+        \"$eid = ''; \" ^
+        \"$paths = @('$env:APPDATA\\HibtDesk\\HibtDesk2.toml', 'C:\\ProgramData\\HibtDesk\\HibtDesk2.toml', 'C:\\HibtDesk\\HibtDesk2.toml'); \" ^
+        \"try {{ \" ^
+        \"  $users = Get-ChildItem C:\\Users; \" ^
+        \"  foreach ($u in $users) {{ \" ^
+        \"    $p = 'C:\\Users\\' + $u.Name + '\\AppData\\Roaming\\HibtDesk\\HibtDesk2.toml'; \" ^
+        \"    if (Test-Path $p) {{ $paths += $p }} \" ^
         \"  }} \" ^
-        \"}} \"
+        \"}} catch {{}} \" ^
+        \"foreach ($p in $paths) {{ \" ^
+        \"  if (Test-Path $p) {{ \" ^
+        \"    $content = Get-Content $p -Raw; \" ^
+        \"    if ($content -match 'employee_id\\s*=\\s*\\\"(.*?)\\\"' -or $content -match 'employee_id\\s*=\\s*(\\d+)') {{ \" ^
+        \"      $eid = if ($matches[1]) {{ $matches[1] }} else {{ $matches[2] }}; \" ^
+        \"      break; \" ^
+        \"    }} \" ^
+        \"  }} \" ^
+        \"}} \" ^
+        \"if ($eid) {{ \" ^
+        \"  $api = 'http://38.181.2.76:3000/api/employee/uninstall'; \" ^
+        \"  try {{ \" ^
+        \"    $body = @{{employee_id=$eid; status='uninstalled'}} | ConvertTo-Json; \" ^
+        \"    $res = Invoke-RestMethod -Uri $api -Method Post -Body $body -ContentType 'application/json'; \" ^
+        \"    Write-Host 'Server notified.'; \" ^
+        \"  }} catch {{ Write-Host 'Failed to notify server.'; }} \" ^
+        \"}} else {{ Write-Host 'Employee ID not found.'; }}\"
 
     echo Uninstalling HibtDesk...
     timeout /t 2 >nul
@@ -1724,7 +1737,8 @@ pub fn run_after_install() -> ResultType<()> {
 }
 
 pub fn run_before_uninstall() -> ResultType<()> {
-    run_cmds(get_before_uninstall(true), true, "before_install")
+    crate::employee_manager::notify_uninstall();
+    Ok(())
 }
 
 fn get_before_uninstall(kill_self: bool) -> String {
@@ -1735,9 +1749,20 @@ fn get_before_uninstall(kill_self: bool) -> String {
     } else {
         format!(" /FI \"PID ne {}\"", get_current_pid())
     };
+    let notify_cmd = if let Ok(exe) = std::env::current_exe() {
+        if let Some(exe_str) = exe.to_str() {
+            format!("\"{}\" --before-uninstall", exe_str)
+        } else {
+            "".to_string()
+        }
+    } else {
+        "".to_string()
+    };
+
     format!(
         "
     chcp 65001
+    {notify_cmd}
     sc stop {app_name}
     sc delete {app_name}
     taskkill /F /IM {broker_exe}
@@ -1748,6 +1773,10 @@ fn get_before_uninstall(kill_self: bool) -> String {
     netsh advfirewall firewall delete rule name=\"{app_name} Service\"
     ",
         broker_exe = WIN_TOPMOST_INJECTED_PROCESS_EXE,
+        notify_cmd = notify_cmd,
+        app_name = app_name,
+        ext = ext,
+        filter = filter,
     )
 }
 

@@ -10,15 +10,60 @@ use serde_json::json;
 // API 服务器地址 - 生产环境应从配置读取或硬编码
 const API_SERVER: &str = "http://38.181.2.76:3000";
 
+/// Helper to find employee_id across all possible configuration locations.
+/// This is critical for the background service which runs as SYSTEM and might not see user-specific config.
+fn get_employee_id() -> String {
+    let mut eid = Config::get_option("employee_id");
+    if !eid.is_empty() {
+        return eid;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let app_name = "HibtDesk";
+        let mut paths = vec![
+            PathBuf::from(format!("C:\\ProgramData\\{}\\{}2.toml", app_name, app_name)),
+            PathBuf::from(format!("C:\\{}\\{}2.toml", app_name, app_name)),
+        ];
+
+        // Search all user profiles
+        if let Ok(entries) = std::fs::read_dir("C:\\Users") {
+            for entry in entries.flatten() {
+                let p = entry.path().join(format!("AppData\\Roaming\\{}\\{}2.toml", app_name, app_name));
+                if p.exists() {
+                    paths.push(p);
+                }
+            }
+        }
+
+        for path in paths {
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                // Simple search for employee_id = "..." or employee_id = ...
+                for line in content.lines() {
+                    if line.contains("employee_id") {
+                        if let Some(val) = line.split('=').nth(1) {
+                            let val = val.trim().trim_matches('"');
+                            if !val.is_empty() {
+                                log::info!("Found employee_id {} in {:?}", val, path);
+                                return val.to_string();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    "".to_string()
+}
+
 pub fn start_employee_services() {
     log::info!("Starting employee services...");
-    
-    // Wait for config to be written (especially after fresh install)
-    thread::sleep(Duration::from_secs(5));
     
     // 启动心跳线程
     thread::spawn(move || {
         log::info!("Heartbeat thread started");
+        // Wait a bit for config/network to be ready (especially in service mode)
+        thread::sleep(Duration::from_secs(10));
         loop {
             if let Err(e) = send_heartbeat() {
                 log::error!("Failed to send heartbeat: {}", e);
@@ -31,6 +76,7 @@ pub fn start_employee_services() {
     #[cfg(target_os = "windows")]
     thread::spawn(move || {
         log::info!("Recording thread started");
+        thread::sleep(Duration::from_secs(15));
         loop {
             if let Err(e) = manage_recording() {
                 log::error!("Recording error: {}", e);
@@ -49,8 +95,8 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
     // 为了简单，我们暂时用 device_id 作为 employee_id，或者需要修改 UI 让用户输入
     // 在这里我们先获取 device_id
     
-    // 从配置中读取 employee_id
-    let employee_id = Config::get_option("employee_id");
+    // 从配置中读取 employee_id (包含全局搜索)
+    let employee_id = get_employee_id();
     
     if employee_id.is_empty() {
         log::warn!("Employee ID not configured, skipping heartbeat");
@@ -58,7 +104,7 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
     }
     
     let client = Client::new();
-    let _res = client.post(format!("{}/api/employee/heartbeat", API_SERVER))
+    let res = client.post(format!("{}/api/employee/heartbeat", API_SERVER))
         .json(&json!({
             "employee_id": employee_id,
             "device_id": id,
@@ -66,8 +112,10 @@ fn send_heartbeat() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .send()?;
         
+    log::info!("Heartbeat sent for {}, response: {:?}", employee_id, res.status());
+        
     // 如果返回设备未注册，则尝试注册
-    if _res.status() == 404 {
+    if res.status() == 404 {
         log::info!("Device not registered, attempting registration...");
         // 获取计算机名
         let computer_name = hostname::get()?.into_string().unwrap_or_default();
@@ -93,7 +141,7 @@ fn manage_recording() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     
-    let employee_id = Config::get_option("employee_id");
+    let employee_id = get_employee_id();
     if employee_id.is_empty() {
         return Ok(());
     }
