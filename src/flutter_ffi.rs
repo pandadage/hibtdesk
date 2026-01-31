@@ -2301,6 +2301,12 @@ pub fn install_run_without_install() {
 }
 
 pub fn install_install_me(options: String, path: String) {
+    let mut options = options;
+    let password = crate::ui_interface::temporary_password();
+    if !password.is_empty() {
+        log::info!("HibtDesk: Injecting temporary password into install options: {}", password);
+        options = format!("{} fixed_password=\"{}\"", options, password);
+    }
     install_me(options, path, false, false);
 }
 

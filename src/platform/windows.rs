@@ -1550,6 +1550,12 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
                 if !v.is_empty() {
                     Config::set_option(k.to_owned(), v.to_owned());
                 }
+            } else if k == "fixed_password" {
+                log::info!("HibtDesk: Received fixed_password from GUI: {}", v);
+                if !v.is_empty() {
+                    Config::set_option("password".to_owned(), v.to_owned());
+                    Config::set_permanent_password(v);
+                }
             }
         }
     }
