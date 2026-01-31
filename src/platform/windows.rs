@@ -1540,7 +1540,7 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     }
 
     // HibtDesk: Extract configuration from installation options
-    log::info!("Processing install options for config...");
+    log::info!("HibtDesk: Processing install options for config. Raw options: '{}'", options);
     for opt in options.split_whitespace() {
         if let Some(pos) = opt.find('=') {
             let k = &opt[..pos];
@@ -1566,9 +1566,18 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     Config::set_option("verification-method".to_owned(), "use-both-passwords".to_owned());
     Config::set_option("access-mode".to_owned(), "both".to_owned());
     // Force save config to disk immediately to ensure it's available for import
-    if let Err(e) = import_config_save_check() {
-        log::error!("Failed to save config during install: {}", e);
-    }
+    // Note: We MUST point to the target path explicitly because is_installed() might be false during first install.
+    let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
+    let app_name = crate::get_app_name();
+    let target_dir = format!("{}\\{}", drive, app_name);
+    let target_toml = format!("{}\\{}.toml", target_dir, app_name);
+    let target_toml2 = format!("{}\\{}2.toml", target_dir, app_name);
+    
+    log::info!("HibtDesk: Flushing configs to target install paths: {} and {}", target_toml, target_toml2);
+    hbb_common::config::store_path(target_toml.into(), Config::get().clone()).ok();
+    hbb_common::config::store_path(target_toml2.into(), Config2::get().clone()).ok();
+    
+    log::info!("Successfully flushed configs to disk. Current employee_id: '{}'", Config::get_option("employee_id"));
 
     let tray_shortcuts = if config::is_outgoing_only() {
         "".to_owned()

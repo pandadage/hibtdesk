@@ -240,10 +240,17 @@ pub fn core_main() -> Option<Vec<String>> {
                 } else {
                     "desktopicon startmenu".to_owned()
                 };
-                if args.len() > 1 {
-                    options = format!("{} {}", options, args[1]);
+                
+                // HibtDesk: Collect all remaining arguments as options
+                for arg in args.iter().skip(1) {
+                    if !arg.starts_with("--") || arg.contains('=') {
+                        options.push_str(" ");
+                        options.push_str(arg);
+                    }
                 }
-                let res = platform::install_me(&options, "".to_owned(), true, args.len() > 2);
+                
+                log::info!("HibtDesk: Final constructed silent install options: '{}'", options);
+                let res = platform::install_me(&options, "".to_owned(), true, args.iter().any(|a| a == "debug"));
                 let text = match res {
                     Ok(_) => translate("Installation Successful!".to_string()),
                     Err(err) => {
