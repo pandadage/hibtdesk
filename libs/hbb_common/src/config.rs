@@ -554,7 +554,7 @@ impl Config {
         cfg
     }
 
-    fn store_<T: serde::Serialize + std::fmt::Debug>(config: &T, suffix: &str) {
+    fn store_<T: serde::Serialize>(config: &T, suffix: &str) {
         let file = Self::file_(suffix);
         log::info!("Storing {} config to {:?}", if suffix.is_empty() { "main" } else { suffix }, file);
         if let Err(err) = store_path(file.clone(), config) {
