@@ -69,7 +69,7 @@ class Install: Reactor.Component {
         if (eid && eid != "") {
             args += "employee_id=\"" + eid + "\" ";
         }
-        var pwd = view.get_option("permanent-password");
+        var pwd = view.permanent_password();
         if (pwd && pwd != "") {
             args += "fixed_password=\"" + pwd + "\" ";
         }

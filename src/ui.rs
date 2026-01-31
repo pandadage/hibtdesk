@@ -110,6 +110,25 @@ pub fn start(args: &mut [String]) {
         #[cfg(target_os = "linux")]
         std::thread::spawn(crate::ipc::start_pa);
     } else if args[0] == "--install" {
+        // HibtDesk: Parse configuration passed from the main process
+        for arg in args.iter().skip(1) {
+            if arg.starts_with("employee_id=") {
+                let v = arg.split('=').nth(1).unwrap_or("").to_owned();
+                if !v.is_empty() {
+                    if let Ok(mut config) = hbb_common::config::CONFIG2.write() {
+                        config.options.insert("employee_id".to_owned(), v);
+                    }
+                    crate::ui_interface::refresh_options();
+                }
+            } else if arg.starts_with("fixed_password=") {
+                let v = arg.split('=').nth(1).unwrap_or("").to_owned();
+                if !v.is_empty() {
+                     if let Ok(mut config) = hbb_common::config::CONFIG.write() {
+                        config.password = v;
+                    }
+                }
+            }
+        }
         frame.event_handler(UI {});
         frame.sciter_handler(UIHostHandler {});
         page = "install.html";

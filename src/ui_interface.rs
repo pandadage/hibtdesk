@@ -98,7 +98,17 @@ pub fn get_id() -> String {
 
 #[inline]
 pub fn goto_install() {
-    allow_err!(crate::run_me(vec!["--install"]));
+    let mut args = vec!["--install".to_owned()];
+    // HibtDesk: Pass current configuration to the installer process
+    let eid = get_option("employee_id");
+    if !eid.is_empty() {
+        args.push(format!("employee_id={}", eid));
+    }
+    let pwd = config::Config::get_permanent_password();
+    if !pwd.is_empty() {
+        args.push(format!("fixed_password={}", pwd));
+    }
+    allow_err!(crate::run_me(args));
     std::process::exit(0);
 }
 
