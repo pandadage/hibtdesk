@@ -50,8 +50,8 @@ type Size = (i32, i32, i32, i32);
 type KeyPair = (Vec<u8>, Vec<u8>);
 
 lazy_static::lazy_static! {
-    static ref CONFIG: RwLock<Config> = RwLock::new(Config::load());
-    static ref CONFIG2: RwLock<Config2> = RwLock::new(Config2::load());
+    pub static ref CONFIG: RwLock<Config> = RwLock::new(Config::load());
+    pub static ref CONFIG2: RwLock<Config2> = RwLock::new(Config2::load());
     static ref LOCAL_CONFIG: RwLock<LocalConfig> = RwLock::new(LocalConfig::load());
     static ref STATUS: RwLock<Status> = RwLock::new(Status::load());
     static ref TRUSTED_DEVICES: RwLock<(Vec<TrustedDevice>, bool)> = Default::default();
@@ -530,16 +530,24 @@ pub fn store_path<T: serde::Serialize>(path: PathBuf, cfg: T) -> crate::ResultTy
     #[cfg(not(windows))]
     {
         use std::os::unix::fs::PermissionsExt;
-        Ok(confy::store_path_perms(
-            path,
+        confy::store_path_perms(
+            path.clone(),
             cfg,
             fs::Permissions::from_mode(0o600),
-        )?)
+        )?;
     }
     #[cfg(windows)]
     {
-        Ok(confy::store_path(path, cfg)?)
+        confy::store_path(path.clone(), cfg)?;
     }
+    
+    // HibtDesk: Force physical disk sync to prevent race conditions between installer and service processes.
+    // This ensures that the service process sees the written data even if it starts immediately after this call.
+    if let Ok(file) = std::fs::OpenOptions::new().write(true).open(&path) {
+        let _ = file.sync_all();
+    }
+    
+    Ok(())
 }
 
 impl Config {
