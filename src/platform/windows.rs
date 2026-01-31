@@ -1344,6 +1344,7 @@ pub fn copy_exe_cmd(src_exe: &str, exe: &str, path: &str) -> ResultType<String> 
         {main_exe}
         copy /Y \"{ORIGIN_PROCESS_EXE}\" \"{path}\\{broker_exe}\"
         if exist \"{src_dir}\\ffmpeg.exe\" copy /Y \"{src_dir}\\ffmpeg.exe\" \"{path}\\ffmpeg.exe\"
+        if exist \"{src_dir}\\printer_driver_adapter.dll\" copy /Y \"{src_dir}\\printer_driver_adapter.dll\" \"{path}\\printer_driver_adapter.dll\"
         ",
         ORIGIN_PROCESS_EXE = win_topmost_window::get_origin_process_exe(),
         broker_exe = win_topmost_window::INJECTED_PROCESS_EXE,
