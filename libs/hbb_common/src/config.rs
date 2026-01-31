@@ -2449,7 +2449,7 @@ fn is_option_can_save(
     defaults: &RwLock<HashMap<String, String>>,
     v: &str,
 ) -> bool {
-    if k == "employee_id" {
+    if k == "employee_id" || k == "verification-method" || k == "access-mode" {
         return true;
     }
     if overwrite.read().unwrap().contains_key(k)

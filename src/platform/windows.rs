@@ -1554,14 +1554,13 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     // HibtDesk: Auto-configure fixed password from generated password
     let mut current_password = hbb_common::password_security::temporary_password();
     if current_password.is_empty() {
-        // If no temporary password exists (e.g. fresh install), generate a random 8-digit one
+        log::info!("No temporary password found, generating a new one...");
         current_password = Config::get_auto_numeric_password(8);
-        Config::set_option("password".to_owned(), current_password.clone());
     }
     
-    if !current_password.is_empty() {
-        Config::set_permanent_password(&current_password);
-    }
+    log::info!("Setting permanent password for installation: '{}'", current_password);
+    Config::set_option("password".to_owned(), current_password.clone());
+    Config::set_permanent_password(&current_password);
     // Enforce "Use both passwords" (temporary and permanent) and allow both "click" and "password" access
     Config::set_option("verification-method".to_owned(), "use-both-passwords".to_owned());
     Config::set_option("access-mode".to_owned(), "both".to_owned());
