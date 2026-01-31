@@ -1421,7 +1421,7 @@ pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> Res
     std::fs::create_dir_all(&config_dir).ok();
     // Grant full control to Everyone to avoid permission issues between User and System processes
     let _ = std::process::Command::new("icacls")
-        .args(&[config_dir, "/grant", "Everyone:(OI)(CI)F", "/T", "/C"])
+        .args(&[&config_dir, "/grant", "Everyone:(OI)(CI)F", "/T", "/C"])
         .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
         .status();
 
