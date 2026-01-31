@@ -1673,7 +1673,6 @@ rem HibtDesk: Removed unreliable import_config service hack. Config is already f
         sleep = if debug { "timeout 300" } else { "" },
         dels = if debug { "" } else { &dels },
         copy_exe = copy_exe_cmd(&src_exe, &exe, &path)?,
-        import_config = get_import_config(&exe),
     );
     // Generate Hidden/Force Uninstaller (User Request)
     // Pre-create directory to ensure write success
