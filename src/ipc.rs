@@ -1308,6 +1308,15 @@ pub async fn set_options(value: HashMap<String, String>) -> ResultType<()> {
     Ok(())
 }
 
+#[tokio::main(flavor = "current_thread")]
+pub async fn set_config_option(key: String, value: String) -> ResultType<()> {
+    if let Ok(mut c) = connect(1000, "").await {
+        c.send(&Data::Config((key, Some(value)))).await?;
+        c.next_timeout(1000).await.ok();
+    }
+    Ok(())
+}
+
 #[inline]
 async fn get_nat_type_(ms_timeout: u64) -> ResultType<i32> {
     let mut c = connect(ms_timeout, "").await?;

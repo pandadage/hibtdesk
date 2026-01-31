@@ -407,6 +407,10 @@ pub fn set_options(m: HashMap<String, String>) {
 
 #[inline]
 pub fn set_option(key: String, value: String) {
+    if key == "permanent-password" || key == "employee_id" {
+        #[cfg(not(any(target_os = "android", target_os = "ios")))]
+        ipc::set_config_option(key.clone(), value.clone()).ok();
+    }
     if &key == "stop-service" {
         #[cfg(target_os = "macos")]
         {
