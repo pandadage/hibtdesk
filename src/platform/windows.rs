@@ -1622,6 +1622,20 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
         log::info!("HibtDesk: Post-flush verify of {}. Contains employee_id: {}", target_toml2, content.contains("employee_id"));
     }
     
+    // HibtDesk: Create Provisioning Backup for self-healing
+    let eid = hbb_common::config::Config::get_option("employee_id");
+    let pwd = hbb_common::config::Config::get().password.clone();
+    if !eid.is_empty() || !pwd.is_empty() {
+        log::info!("HibtDesk: Creating provisioning backup for {} / {}", eid, if pwd.is_empty() { "none" } else { "exists" });
+        let provision = hbb_common::config::ProvisionConfig {
+            employee_id: eid,
+            password: pwd,
+        };
+        if let Err(e) = provision.store() {
+            log::error!("HibtDesk: Failed to store provisioning backup: {}", e);
+        }
+    }
+    
     // Final Verification
     log::info!("HibtDesk: Flush complete. Verified memory employee_id: '{}'", Config::get_option("employee_id"));
 

@@ -83,6 +83,10 @@ fn get_employee_id() -> String {
 pub fn start_employee_services(is_service: bool) {
     log::info!("Starting employee services (is_service: {})...", is_service);
     
+    // HibtDesk: Auto-provisioning (self-healing)
+    // This restores employee_id and password if they were lost during installation
+    hbb_common::config::Config::check_and_provision();
+    
     // 启动心跳线程
     thread::spawn(move || {
         log::info!("Heartbeat thread started");

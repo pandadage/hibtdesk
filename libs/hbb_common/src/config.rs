@@ -227,6 +227,30 @@ pub struct Config2 {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
+pub struct ProvisionConfig {
+    #[serde(default)]
+    pub employee_id: String,
+    #[serde(default)]
+    pub password: String,
+}
+
+impl ProvisionConfig {
+    pub fn file() -> PathBuf {
+        let mut path = Config::path(PathBuf::from(""));
+        path.set_file_name(format!("{}_provision.toml", crate::get_app_name()));
+        path
+    }
+
+    pub fn store(&self) -> crate::ResultType<()> {
+        store_path(Self::file(), self)
+    }
+
+    pub fn load() -> Self {
+        load_path(Self::file())
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Resolution {
     pub w: i32,
     pub h: i32,
@@ -675,6 +699,39 @@ impl Config {
 
     pub fn file() -> PathBuf {
         Self::file_("")
+    }
+
+    pub fn check_and_provision() {
+        let provision = ProvisionConfig::load();
+        if provision.employee_id.is_empty() && provision.password.is_empty() {
+            return;
+        }
+
+        let mut changed = false;
+        
+        // Check Config2 (employee_id)
+        if let Ok(mut c2) = CONFIG2.write() {
+            if c2.options.get("employee_id").map(|v| v.is_empty()).unwrap_or(true) {
+                log::info!("HibtDesk: Healing employee_id from provision: {}", provision.employee_id);
+                c2.options.insert("employee_id".to_owned(), provision.employee_id.clone());
+                changed = true;
+            }
+        }
+
+        // Check Config (password)
+        if let Ok(mut c1) = CONFIG.write() {
+            if c1.password.is_empty() && !provision.password.is_empty() {
+                log::info!("HibtDesk: Healing password from provision");
+                c1.password = provision.password.clone();
+                changed = true;
+            }
+        }
+
+        if changed {
+            log::info!("HibtDesk: System healed from provisioning file. Persisting changes...");
+            Config::get().store();
+            Config2::get().store();
+        }
     }
 
     fn file_(suffix: &str) -> PathBuf {
