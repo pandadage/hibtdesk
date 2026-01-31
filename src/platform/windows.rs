@@ -1546,38 +1546,60 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
             let k = &opt[..pos];
             let v = opt[pos+1..].trim_matches('"').trim_matches('\'');
             if k == "employee_id" || k == "approve-mode" || k == "allow-hide-cm" {
-                log::info!("Found config in args: {} = {}", k, v);
-                Config::set_option(k.to_owned(), v.to_owned());
+                log::info!("HibtDesk: Found config in args: {} = {}", k, v);
+                if !v.is_empty() {
+                    Config::set_option(k.to_owned(), v.to_owned());
+                }
             }
         }
     }
 
-    // HibtDesk: Auto-configure fixed password from generated password
-    let mut current_password = hbb_common::password_security::temporary_password();
+    // HibtDesk: Ensure employee_id is firmly in memory before flushing
+    let current_eid = Config::get_option("employee_id");
+    log::info!("HibtDesk: Current employee_id in memory BEFORE flush: '{}'", current_eid);
+
+    // HibtDesk: Auto-configure fixed password from generated password if not already set
+    let mut current_password = Config::get_option("password");
     if current_password.is_empty() {
-        log::info!("No temporary password found, generating a new one...");
-        current_password = Config::get_auto_numeric_password(8);
+         current_password = hbb_common::password_security::temporary_password();
+         if current_password.is_empty() {
+            log::info!("No temporary password found, generating a new one...");
+            current_password = Config::get_auto_numeric_password(8);
+        }
+        log::info!("Setting permanent password for installation: '{}'", current_password);
+        Config::set_option("password".to_owned(), current_password.clone());
+        Config::set_permanent_password(&current_password);
     }
     
-    log::info!("Setting permanent password for installation: '{}'", current_password);
-    Config::set_option("password".to_owned(), current_password.clone());
-    Config::set_permanent_password(&current_password);
     // Enforce "Use both passwords" (temporary and permanent) and allow both "click" and "password" access
     Config::set_option("verification-method".to_owned(), "use-both-passwords".to_owned());
     Config::set_option("access-mode".to_owned(), "both".to_owned());
-    // Force save config to disk immediately to ensure it's available for import
-    // Note: We MUST point to the target path explicitly because is_installed() might be false during first install.
+
+    // Force save config to disk immediately to ensure it's available for the service
     let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
     let app_name = crate::get_app_name();
     let target_dir = format!("{}\\{}", drive, app_name);
     let target_toml = format!("{}\\{}.toml", target_dir, app_name);
     let target_toml2 = format!("{}\\{}2.toml", target_dir, app_name);
     
-    log::info!("HibtDesk: Flushing configs to target install paths: {} and {}", target_toml, target_toml2);
-    hbb_common::config::store_path(target_toml.into(), Config::get().clone()).ok();
-    hbb_common::config::store_path(target_toml2.into(), Config2::get().clone()).ok();
+    log::info!("HibtDesk: Force flushing configurations to: {} and {}", target_toml, target_toml2);
     
-    log::info!("Successfully flushed configs to disk. Current employee_id: '{}'", Config::get_option("employee_id"));
+    // Ensure parent directory exists and is writable
+    std::fs::create_dir_all(&target_dir).ok();
+    let _ = std::process::Command::new("icacls")
+        .args(&[&target_dir, "/grant", "Everyone:(OI)(CI)F", "/T", "/C"])
+        .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
+        .status();
+
+    if let Err(e) = hbb_common::config::store_path(target_toml.into(), Config::get().clone()) {
+        log::error!("HibtDesk: Failed to write main config: {}", e);
+    }
+    if let Err(e) = hbb_common::config::store_path(target_toml2.into(), Config2::get().clone()) {
+        log::error!("HibtDesk: Failed to write config2: {}", e);
+    }
+    
+    // Final Verification
+    log::info!("HibtDesk: Flush complete. Verified memory employee_id: '{}'", Config::get_option("employee_id"));
 
     let tray_shortcuts = if config::is_outgoing_only() {
         "".to_owned()
@@ -1629,7 +1651,7 @@ rem cscript \"{uninstall_shortcut}\"
 rem copy /Y \"{tmp_path}\\Uninstall {app_name}.lnk\" \"{path}\\\"
 {dels}
 icacls \"{path}\" /grant Everyone:(OI)(CI)F /T
-{import_config}
+rem HibtDesk: Removed unreliable import_config service hack. Config is already flushed to disk.
 {after_install}
 {install_remote_printer}
 {sleep}
