@@ -248,7 +248,7 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: hibtdesk-unsigned-windows-${{ matrix.job.arch }}
-          path: rustdesk
+          path: hibtdesk
 
       - name: Sign hibtdesk files
         if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != '-2'
@@ -269,7 +269,7 @@ jobs:
           python3 ./generate.py -f ../../hibtdesk/ -o . -e ../../hibtdesk/HibtDesk.exe
           popd
           mkdir -p ./SignOutput
-          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/hibtdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
+          mv ./target/release/hibtdesk-portable-packer.exe ./SignOutput/hibtdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
