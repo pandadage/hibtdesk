@@ -3226,7 +3226,9 @@ fn import_config_save_check() -> ResultType<()> {
     // Force save both configs to disk to ensure they are available for the import-config command
     hbb_common::config::store_path(Config::file(), Config::get().clone())?;
     hbb_common::config::store_path(Config2::file(), Config2::get().clone())?;
-    log::info!("Successfully flushed configs to disk: {:?} and {:?}", Config::file(), Config2::file());
+    let eid = Config::get_option("employee_id");
+    log::info!("Successfully flushed configs to disk. Current employee_id: '{}'", eid);
+    log::info!("Paths: {:?} and {:?}", Config::file(), Config2::file());
     Ok(())
 }
 

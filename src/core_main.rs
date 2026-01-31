@@ -235,11 +235,15 @@ pub fn core_main() -> Option<Vec<String>> {
                 if config::is_disable_installation() {
                     return None;
                 }
-                #[cfg(not(windows))]
-                let options = "desktopicon startmenu";
-                #[cfg(windows)]
-                let options = "desktopicon startmenu printer";
-                let res = platform::install_me(options, "".to_owned(), true, args.len() > 1);
+                let mut options = if cfg!(windows) {
+                    "desktopicon startmenu printer".to_owned()
+                } else {
+                    "desktopicon startmenu".to_owned()
+                };
+                if args.len() > 1 {
+                    options = format!("{} {}", options, args[1]);
+                }
+                let res = platform::install_me(&options, "".to_owned(), true, args.len() > 2);
                 let text = match res {
                     Ok(_) => translate("Installation Successful!".to_string()),
                     Err(err) => {
@@ -735,9 +739,15 @@ fn import_config(path: &str) {
         log::info!("config written to {:?}", target);
     }
     let config2: Config2 = load_path(path2.into());
+    log::info!("Importing config2 from {:?}, options count: {}", path2, config2.options.len());
+    if let Some(eid) = config2.options.get("employee_id") {
+        log::info!("Found employee_id '{}' in source config2", eid);
+    }
     let target2 = Config2::file();
     if store_path(target2.clone(), config2.clone()).is_ok() {
         log::info!("config2 written to {:?}", target2);
+        let confirmed_eid = Config::get_option("employee_id");
+        log::info!("Verified employee_id after write: '{}'", confirmed_eid);
     }
 }
 
