@@ -237,6 +237,11 @@ pub struct ProvisionConfig {
 impl ProvisionConfig {
     pub fn file() -> PathBuf {
         let mut path = Config::path("");
+        // Fix: Use parent directory (application root) instead of inside the config file path itself
+        if let Some(parent) = path.parent() {
+            return parent.join(format!("{}_provision.toml", *APP_NAME.read().unwrap()));
+        }
+        // Fallback
         path.push(format!("{}_provision.toml", *APP_NAME.read().unwrap()));
         path
     }
