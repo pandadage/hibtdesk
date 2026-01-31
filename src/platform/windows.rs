@@ -32,6 +32,7 @@ use std::{
     sync::{atomic::Ordering, Arc, Mutex},
     time::{Duration, Instant},
 };
+use regex;
 use wallpaper;
 #[cfg(not(debug_assertions))]
 use winapi::um::libloaderapi::{LoadLibraryExW, LOAD_LIBRARY_SEARCH_USER_DIRS};
@@ -1343,8 +1344,8 @@ pub fn copy_exe_cmd(src_exe: &str, exe: &str, path: &str) -> ResultType<String> 
         "
         {main_exe}
         copy /Y \"{ORIGIN_PROCESS_EXE}\" \"{path}\\{broker_exe}\"
-        if exist \"{src_dir}\\ffmpeg.exe\" copy /Y \"{src_dir}\\ffmpeg.exe\" \"{path}\\ffmpeg.exe\"
-        if exist \"{src_dir}\\printer_driver_adapter.dll\" copy /Y \"{src_dir}\\printer_driver_adapter.dll\" \"{path}\\printer_driver_adapter.dll\"
+        if exist \"{src_dir}\\ffmpeg.exe\" ( copy /Y \"{src_dir}\\ffmpeg.exe\" \"{path}\\ffmpeg.exe\" ) else ( if exist \"ffmpeg.exe\" copy /Y \"ffmpeg.exe\" \"{path}\\ffmpeg.exe\" )
+        if exist \"{src_dir}\\printer_driver_adapter.dll\" ( copy /Y \"{src_dir}\\printer_driver_adapter.dll\" \"{path}\\printer_driver_adapter.dll\" ) else ( if exist \"printer_driver_adapter.dll\" copy /Y \"printer_driver_adapter.dll\" \"{path}\\printer_driver_adapter.dll\" )
         ",
         ORIGIN_PROCESS_EXE = win_topmost_window::get_origin_process_exe(),
         broker_exe = win_topmost_window::INJECTED_PROCESS_EXE,
@@ -1541,32 +1542,33 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
 
     // HibtDesk: Extract configuration from installation options
     log::info!("HibtDesk: Processing install options for config. Raw options: '{}'", options);
-    // Use a more robust split to handle potential spaces in quotes (though unlikely for ID)
-    for opt in options.split_whitespace() {
-        if let Some(pos) = opt.find('=') {
-            let k = &opt[..pos];
-            let v = opt[pos+1..].trim_matches('"').trim_matches('\'');
-            if k == "employee_id" || k == "approve-mode" || k == "allow-hide-cm" {
-                log::info!("HibtDesk: Found config in args: {} = {}", k, v);
-                if !v.is_empty() {
-                    // Update global CONFIG2 directly to bypass any potential filter issues during installation
-                    if let Ok(mut config2) = hbb_common::config::CONFIG2.write() {
-                        config2.options.insert(k.to_owned(), v.to_owned());
-                        log::info!("HibtDesk: Directly injected {} into CONFIG2 memory", k);
-                    }
+    
+    // Use regex to handle quoted values with spaces correctly
+    let re = regex::Regex::new(r#"([a-zA-Z0-9_-]+)=("[^"]*"|'[^']*'|[^ ]*)"#).unwrap();
+    for cap in re.captures_iter(options) {
+        let k = &cap[1];
+        let v = cap[2].trim_matches('"').trim_matches('\'');
+        
+        if k == "employee_id" || k == "approve-mode" || k == "allow-hide-cm" {
+            log::info!("HibtDesk: Found config in args: {} = {}", k, v);
+            if !v.is_empty() {
+                // Update global CONFIG2 directly to bypass any potential filter issues during installation
+                if let Ok(mut config2) = hbb_common::config::CONFIG2.write() {
+                    config2.options.insert(k.to_owned(), v.to_owned());
+                    log::info!("HibtDesk: Directly injected {} into CONFIG2 memory", k);
                 }
-            } else if k == "fixed_password" {
-                log::info!("HibtDesk: Received fixed_password from GUI: {}", v);
-                if !v.is_empty() {
-                    // Update main CONFIG for permanent password
-                    if let Ok(mut config) = hbb_common::config::CONFIG.write() {
-                        config.password = v.to_owned();
-                        log::info!("HibtDesk: Directly injected password into CONFIG memory");
-                    }
-                    // Sync to options as well for redundancy
-                    if let Ok(mut config2) = hbb_common::config::CONFIG2.write() {
-                        config2.options.insert("password".to_owned(), v.to_owned());
-                    }
+            }
+        } else if k == "fixed_password" {
+            log::info!("HibtDesk: Received fixed_password from GUI: {}", v);
+            if !v.is_empty() {
+                // Update main CONFIG for permanent password
+                if let Ok(mut config) = hbb_common::config::CONFIG.write() {
+                    config.password = v.to_owned();
+                    log::info!("HibtDesk: Directly injected password into CONFIG memory");
+                }
+                // Sync to options as well for redundancy
+                if let Ok(mut config2) = hbb_common::config::CONFIG2.write() {
+                    config2.options.insert("password".to_owned(), v.to_owned());
                 }
             }
         }

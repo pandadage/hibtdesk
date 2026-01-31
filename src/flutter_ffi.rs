@@ -2302,6 +2302,15 @@ pub fn install_run_without_install() {
 
 pub fn install_install_me(options: String, path: String) {
     let mut options = options;
+    
+    // HibtDesk: Ensure employee_id is passed to the installer
+    // We get it from memory (in GUI process) and inject it if not already present
+    let eid = hbb_common::config::Config::get_option("employee_id");
+    if !eid.is_empty() && !options.contains("employee_id=") {
+        log::info!("HibtDesk: Injecting employee_id into install options: {}", eid);
+        options = format!("{} employee_id=\"{}\"", options, eid);
+    }
+
     let password = crate::ui_interface::temporary_password();
     if !password.is_empty() {
         log::info!("HibtDesk: Injecting temporary password into install options: {}", password);
