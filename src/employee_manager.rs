@@ -3,7 +3,7 @@ use std::time::{Duration, SystemTime};
 use std::process::{Command, Stdio};
 use std::path::PathBuf;
 use std::fs;
-use hbb_common::{log, config::Config, chrono::{self, Timelike}};
+use hbb_common::{log, config::{Config, Config2, load_path}, chrono::{self, Timelike}};
 use reqwest::blocking::Client;
 use serde_json::json;
 
@@ -46,22 +46,30 @@ fn get_employee_id() -> String {
         for path in paths {
             if path.exists() {
                 log::info!("Checking path: {:?}", path);
+                let config2: Config2 = load_path(path.clone());
+                if let Some(val) = config2.options.get("employee_id") {
+                    if !val.is_empty() {
+                        log::info!("SUCCESS: Found employee_id {} in file {:?}", val, path);
+                        return val.to_string();
+                    }
+                }
+                
+                // Fallback to manual check if load_path failed or field missing, but log content for debug
                 if let Ok(content) = std::fs::read_to_string(&path) {
-                    // Simple search for employee_id = "..." or employee_id = ...
-                    for line in content.lines() {
-                        if line.contains("employee_id") {
-                            log::info!("Found line with employee_id in {:?}: {}", path, line);
-                            if let Some(val) = line.split('=').nth(1) {
-                                let val = val.trim().trim_matches('"').trim_matches('\'');
-                                if !val.is_empty() {
-                                    log::info!("SUCCESS: Found employee_id {} in file {:?}", val, path);
-                                    return val.to_string();
+                    log::debug!("File content for {:?}:\n{}", path, content);
+                    if content.contains("employee_id") {
+                         for line in content.lines() {
+                            if line.contains("employee_id") {
+                                if let Some(val) = line.split('=').nth(1) {
+                                    let val = val.trim().trim_matches('"').trim_matches('\'').trim_matches('{').trim_matches('}');
+                                    if !val.is_empty() {
+                                        log::info!("SUCCESS (Manual Fallback): Found employee_id {} in file {:?}", val, path);
+                                        return val.to_string();
+                                    }
                                 }
                             }
                         }
                     }
-                } else {
-                    log::warn!("Could NOT read file: {:?}", path);
                 }
             } else {
                 log::trace!("Path does not exist: {:?}", path);

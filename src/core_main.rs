@@ -724,10 +724,6 @@ fn import_config(path: &str) {
     let path2 = path.replace(".toml", "2.toml");
     let target = Config::file();
     log::info!("import_config request: source={:?}, target={:?}", path, target);
-    if std::path::Path::new(path) == target {
-        log::info!("Skip import as source is already the target: {:?}", path);
-        return;
-    }
     let path2 = std::path::Path::new(&path2);
     let path = std::path::Path::new(path);
     log::info!("import config from {:?} and {:?}", path, path2);
@@ -740,9 +736,15 @@ fn import_config(path: &str) {
     }
     let config2: Config2 = load_path(path2.into());
     log::info!("Importing config2 from {:?}, options count: {}", path2, config2.options.len());
-    if let Some(eid) = config2.options.get("employee_id") {
-        log::info!("Found employee_id '{}' in source config2", eid);
+    
+    // Explicitly update critical options in-memory via set_option to ensure consistency
+    for (k, v) in config2.options.iter() {
+        if k == "employee_id" || k == "verification-method" || k == "access-mode" {
+             log::info!("Updating critical option in-memory: {} = {}", k, v);
+             Config::set_option(k.clone(), v.clone());
+        }
     }
+
     let target2 = Config2::file();
     if store_path(target2.clone(), config2.clone()).is_ok() {
         log::info!("config2 written to {:?}", target2);
