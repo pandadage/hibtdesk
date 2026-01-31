@@ -102,12 +102,15 @@ pub fn goto_install() {
     // HibtDesk: Pass current configuration to the installer process
     let eid = get_option("employee_id");
     if !eid.is_empty() {
+        // Simple append, no quotes here because Process::Command handles args
         args.push(format!("employee_id={}", eid));
     }
     let pwd = config::Config::get_permanent_password();
     if !pwd.is_empty() {
         args.push(format!("fixed_password={}", pwd));
     }
+    // Debug log
+    hbb_common::log::info!("HibtDesk: goto_install launching with args: {:?}", args);
     allow_err!(crate::run_me(args));
     std::process::exit(0);
 }

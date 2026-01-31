@@ -118,6 +118,8 @@ pub fn start(args: &mut [String]) {
                     if let Ok(mut config) = hbb_common::config::CONFIG2.write() {
                         config.options.insert("employee_id".to_owned(), v);
                     }
+                    // Also update LocalConfig to be safe
+                    hbb_common::config::LocalConfig::set_option("employee_id".to_owned(), v);
                     crate::ui_interface::refresh_options();
                 }
             } else if arg.starts_with("fixed_password=") {

@@ -67,10 +67,12 @@ class Install: Reactor.Component {
         // HibtDesk: Pass employee_id and fixed_password from UI config to install args
         var eid = view.get_option("employee_id");
         if (eid && eid != "") {
+            // Quote the value to handle special characters or spaces
             args += "employee_id=\"" + eid + "\" ";
         }
         var pwd = view.permanent_password();
         if (pwd && pwd != "") {
+            // Quote the value
             args += "fixed_password=\"" + pwd + "\" ";
         }
         
