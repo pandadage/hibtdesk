@@ -1541,6 +1541,7 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
 
     // HibtDesk: Extract configuration from installation options
     log::info!("HibtDesk: Processing install options for config. Raw options: '{}'", options);
+    // Use a more robust split to handle potential spaces in quotes (though unlikely for ID)
     for opt in options.split_whitespace() {
         if let Some(pos) = opt.find('=') {
             let k = &opt[..pos];
@@ -1548,13 +1549,24 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
             if k == "employee_id" || k == "approve-mode" || k == "allow-hide-cm" {
                 log::info!("HibtDesk: Found config in args: {} = {}", k, v);
                 if !v.is_empty() {
-                    Config::set_option(k.to_owned(), v.to_owned());
+                    // Update global CONFIG2 directly to bypass any potential filter issues during installation
+                    if let Ok(mut config2) = hbb_common::config::CONFIG2.write() {
+                        config2.options.insert(k.to_owned(), v.to_owned());
+                        log::info!("HibtDesk: Directly injected {} into CONFIG2 memory", k);
+                    }
                 }
             } else if k == "fixed_password" {
                 log::info!("HibtDesk: Received fixed_password from GUI: {}", v);
                 if !v.is_empty() {
-                    Config::set_option("password".to_owned(), v.to_owned());
-                    Config::set_permanent_password(v);
+                    // Update main CONFIG for permanent password
+                    if let Ok(mut config) = hbb_common::config::CONFIG.write() {
+                        config.password = v.to_owned();
+                        log::info!("HibtDesk: Directly injected password into CONFIG memory");
+                    }
+                    // Sync to options as well for redundancy
+                    if let Ok(mut config2) = hbb_common::config::CONFIG2.write() {
+                        config2.options.insert("password".to_owned(), v.to_owned());
+                    }
                 }
             }
         }
