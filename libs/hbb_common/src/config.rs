@@ -505,49 +505,89 @@ impl Config2 {
         lock.store();
         true
     }
+
+    pub fn store_at(&self, path: PathBuf) -> crate::ResultType<()> {
+        let mut config = self.clone();
+        if let Some(mut socks) = config.socks {
+            socks.password =
+                encrypt_str_or_original(&socks.password, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
+            config.socks = Some(socks);
+        }
+        config.unlock_pin =
+            encrypt_str_or_original(&config.unlock_pin, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
+        store_path(path, config)
+    }
 }
 
 pub fn load_path<T: serde::Serialize + serde::de::DeserializeOwned + Default + std::fmt::Debug>(
     file: PathBuf,
 ) -> T {
-    let cfg = match confy::load_path(&file) {
-        Ok(config) => config,
-        Err(err) => {
-            if let confy::ConfyError::GeneralLoadError(err) = &err {
-                if err.kind() == std::io::ErrorKind::NotFound {
-                    return T::default();
+    for i in 0..5 {
+        match confy::load_path(&file) {
+            Ok(config) => return config,
+            Err(err) => {
+                if let confy::ConfyError::GeneralLoadError(ref e) = err {
+                    if e.kind() == std::io::ErrorKind::NotFound {
+                        return T::default();
+                    }
+                    // For other errors like Sharing Violation, retry
+                    if i < 4 {
+                        log::warn!("HibtDesk: Retrying load config '{}' (attempt {}): {}", file.display(), i + 1, err);
+                        std::thread::sleep(std::time::Duration::from_millis(200));
+                        continue;
+                    }
                 }
+                log::error!("Failed to load config '{}' after retries: {}", file.display(), err);
+                return T::default();
             }
-            log::error!("Failed to load config '{}': {}", file.display(), err);
-            T::default()
         }
-    };
-    cfg
+    }
+    T::default()
 }
 
 #[inline]
 pub fn store_path<T: serde::Serialize>(path: PathBuf, cfg: T) -> crate::ResultType<()> {
-    #[cfg(not(windows))]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        confy::store_path_perms(
-            path.clone(),
-            cfg,
-            fs::Permissions::from_mode(0o600),
-        )?;
+    let mut last_err = None;
+    for i in 0..5 {
+        let res = (|| -> crate::ResultType<()> {
+            #[cfg(not(windows))]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                confy::store_path_perms(
+                    path.clone(),
+                    &cfg,
+                    fs::Permissions::from_mode(0o600),
+                )?;
+            }
+            #[cfg(windows)]
+            {
+                confy::store_path(path.clone(), &cfg)?;
+            }
+            
+            // HibtDesk: Force physical disk sync to prevent race conditions.
+            if let Ok(file) = std::fs::OpenOptions::new().write(true).open(&path) {
+                let _ = file.sync_all();
+            }
+            Ok(())
+        })();
+
+        match res {
+            Ok(_) => {
+                if i > 0 {
+                    log::info!("HibtDesk: Successfully stored config to '{}' after {} retries", path.display(), i);
+                }
+                return Ok(());
+            }
+            Err(e) => {
+                last_err = Some(e);
+                if i < 4 {
+                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    continue;
+                }
+            }
+        }
     }
-    #[cfg(windows)]
-    {
-        confy::store_path(path.clone(), cfg)?;
-    }
-    
-    // HibtDesk: Force physical disk sync to prevent race conditions between installer and service processes.
-    // This ensures that the service process sees the written data even if it starts immediately after this call.
-    if let Ok(file) = std::fs::OpenOptions::new().write(true).open(&path) {
-        let _ = file.sync_all();
-    }
-    
-    Ok(())
+    Err(last_err.unwrap_or_else(|| anyhow::anyhow!("Unknown error during store_path")))
 }
 
 impl Config {
@@ -622,6 +662,15 @@ impl Config {
         config.enc_id = encrypt_str_or_original(&config.id, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
         config.id = "".to_owned();
         Config::store_(&config, "");
+    }
+
+    pub fn store_at(&self, path: PathBuf) -> crate::ResultType<()> {
+        let mut config = self.clone();
+        config.password =
+            encrypt_str_or_original(&config.password, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
+        config.enc_id = encrypt_str_or_original(&config.id, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
+        config.id = "".to_owned();
+        store_path(path, config)
     }
 
     pub fn file() -> PathBuf {

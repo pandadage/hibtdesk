@@ -1609,11 +1609,16 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
         .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
         .status();
 
-    if let Err(e) = hbb_common::config::store_path(target_toml.into(), Config::get().clone()) {
+    if let Err(e) = hbb_common::config::Config::get().store_at(target_toml.clone().into()) {
         log::error!("HibtDesk: Failed to write main config: {}", e);
     }
-    if let Err(e) = hbb_common::config::store_path(target_toml2.into(), Config2::get().clone()) {
+    if let Err(e) = hbb_common::config::Config2::get().store_at(target_toml2.clone().into()) {
         log::error!("HibtDesk: Failed to write config2: {}", e);
+    }
+    
+    // Final Verification: Read back to ensure the disk actually has the content
+    if let Ok(content) = std::fs::read_to_string(&target_toml2) {
+        log::info!("HibtDesk: Post-flush verify of {}. Contains employee_id: {}", target_toml2, content.contains("employee_id"));
     }
     
     // Final Verification
