@@ -1632,7 +1632,15 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
             employee_id: eid,
             password: pwd,
         };
-        if let Err(e) = provision.store() {
+        // HibtDesk: Manual path construction to avoid library bug
+        let config_path = hbb_common::config::Config::file();
+        let provision_path = if let Some(parent) = config_path.parent() {
+            parent.join(format!("{}_provision.toml", crate::get_app_name()))
+        } else {
+            config_path.with_file_name(format!("{}_provision.toml", crate::get_app_name()))
+        };
+        
+        if let Err(e) = hbb_common::config::store_path(provision_path, provision) {
             log::error!("HibtDesk: Failed to store provisioning backup: {}", e);
         }
     }
