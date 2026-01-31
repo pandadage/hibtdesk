@@ -1419,9 +1419,10 @@ pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> Res
     let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_string());
     let config_dir = format!("{}\\{}", drive, crate::get_app_name());
     std::fs::create_dir_all(&config_dir).ok();
-    // Grant full control to Everyone to avoid permission issues between User and System processes
+    // Grant full control to Everyone (via universal SID *S-1-1-0) 
+    // to avoid permission issues between User and System processes
     let _ = std::process::Command::new("icacls")
-        .args(&[&config_dir, "/grant", "Everyone:(OI)(CI)F", "/T", "/C"])
+        .args(&[&config_dir, "/grant", "*S-1-1-0:(OI)(CI)F", "/T", "/C"])
         .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
         .status();
 
@@ -1638,6 +1639,12 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
     
     // Final Verification
     log::info!("HibtDesk: Flush complete. Verified memory employee_id: '{}'", Config::get_option("employee_id"));
+
+    // HibtDesk: Final recursive permission fix to handle newly created config/provision files
+    let _ = std::process::Command::new("icacls")
+        .args(&[&config_dir, "/grant", "*S-1-1-0:(OI)(CI)F", "/T", "/C"])
+        .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
+        .status();
 
     let tray_shortcuts = if config::is_outgoing_only() {
         "".to_owned()
