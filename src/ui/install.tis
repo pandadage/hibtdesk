@@ -63,6 +63,17 @@ class Install: Reactor.Component {
         if ($(#desktopicon).value) {
             args += "desktopicon ";
         }
+        
+        // HibtDesk: Pass employee_id and fixed_password from UI config to install args
+        var eid = view.get_option("employee_id");
+        if (eid && eid != "") {
+            args += "employee_id=\"" + eid + "\" ";
+        }
+        var pwd = view.get_option("permanent-password");
+        if (pwd && pwd != "") {
+            args += "fixed_password=\"" + pwd + "\" ";
+        }
+        
         view.install_me(args, install_path);
     }
 }
