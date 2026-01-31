@@ -236,8 +236,8 @@ pub struct ProvisionConfig {
 
 impl ProvisionConfig {
     pub fn file() -> PathBuf {
-        let mut path = Config::path(PathBuf::from(""));
-        path.set_file_name(format!("{}_provision.toml", crate::get_app_name()));
+        let mut path = Config::path("");
+        path.push(format!("{}_provision.toml", *APP_NAME.read().unwrap()));
         path
     }
 
